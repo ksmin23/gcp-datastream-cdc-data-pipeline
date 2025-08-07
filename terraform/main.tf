@@ -50,8 +50,8 @@ resource "google_project_service" "project_services" {
 
 # VPC Peering connection for the SQL instance
 resource "google_service_networking_connection" "private_vpc_connection" {
-  network                 = data.google_compute_network.main_vpc.id
-  service                 = "servicenetworking.googleapis.com"
+  network = data.google_compute_network.main_vpc.id
+  service = "servicenetworking.googleapis.com"
   # reserved_peering_ranges = concat(var.existing_peering_ranges, [google_compute_global_address.private_ip_address.name])
   reserved_peering_ranges = var.existing_peering_ranges
   depends_on              = [google_project_service.project_services["servicenetworking.googleapis.com"]]
@@ -241,7 +241,7 @@ resource "google_datastream_stream" "default_stream" {
   stream_id    = var.stream_name
   location     = var.region
   project      = var.project_id
-  
+
 
   source_config {
     source_connection_profile = google_datastream_connection_profile.mysql_source_profile.id
@@ -256,10 +256,10 @@ resource "google_datastream_stream" "default_stream" {
     destination_connection_profile = google_datastream_connection_profile.bigquery_destination_profile.id
     bigquery_destination_config {
       data_freshness = "900s" # 15 minutes
-      
+
       source_hierarchy_datasets {
         dataset_template {
-          location = var.bigquery_dataset_location
+          location          = var.bigquery_dataset_location
           dataset_id_prefix = google_bigquery_dataset.datastream_destination_dataset.dataset_id
         }
       }
