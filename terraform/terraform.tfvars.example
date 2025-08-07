@@ -1,0 +1,18 @@
+# terraform.tfvars.example
+
+# Replace with your GCP Project ID
+project_id = "your-gcp-project-id"
+
+# The GCP region for all resources
+region = "us-central1"
+
+# The name of your existing VPC network
+vpc_name = "default"
+
+# A list of GCP project IDs allowed to connect to the Cloud SQL instance via PSC.
+# IMPORTANT: You must include your own project_id in this list for Datastream to connect.
+allowed_psc_projects = ["your-gcp-project-id"]
+
+# A dedicated /29 CIDR block for the PSC subnet.
+# IMPORTANT: This range must NOT overlap with any existing subnets in your VPC.
+psc_subnet_cidr_range = "10.10.0.0/29"
