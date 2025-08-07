@@ -50,3 +50,31 @@ variable "existing_peering_ranges" {
   type        = list(string)
   default     = []
 }
+
+variable "bigquery_dataset_name" {
+  description = "The name of the BigQuery dataset to be used as the destination."
+  type        = string
+  default     = "datastream_destination_dataset"
+}
+
+variable "bigquery_dataset_location" {
+  description = "The location for the BigQuery dataset."
+  type        = string
+  default     = "US" # Or a more specific region like "us-central1"
+}
+
+variable "bigquery_connection_profile_name" {
+  description = "The name for the BigQuery destination connection profile."
+  type        = string
+  default     = "bigquery-destination-profile"
+}
+
+variable "stream_name" {
+  description = "The name for the Datastream stream."
+  type        = string
+  default     = "mysql-to-bigquery-stream"
+}
+
+
+
+

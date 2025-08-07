@@ -35,3 +35,35 @@ output "datastream_private_connection_name" {
   description = "The name of the Datastream private connection resource."
   value       = google_datastream_private_connection.default.name
 }
+
+output "datastream_bigquery_connection_profile_name" {
+  description = "The name of the Datastream BigQuery destination connection profile created."
+  value       = google_datastream_connection_profile.bigquery_destination_profile.name
+}
+
+output "root_user_name" {
+  description = "The username for the root database user."
+  value       = google_sql_user.root_user.name
+}
+
+output "root_user_password" {
+  description = "The password for the root user. Use `terraform output -json | jq -r .root_user_password.value` to view."
+  value       = random_password.root_password.result
+  sensitive   = true
+}
+
+output "admin_user_name" {
+  description = "The username for the admin database user."
+  value       = google_sql_user.admin_user.name
+}
+
+output "admin_user_password" {
+  description = "The password for the admin user. Use `terraform output -json | jq -r .admin_user_password.value` to view."
+  value       = random_password.admin_password.result
+  sensitive   = true
+}
+
+output "datastream_stream_name" {
+  description = "The name of the Datastream stream created."
+  value       = google_datastream_stream.default_stream.name
+}

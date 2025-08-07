@@ -32,7 +32,8 @@ resource "google_project_service" "project_services" {
   for_each = toset([
     "sqladmin.googleapis.com",
     "servicenetworking.googleapis.com",
-    "datastream.googleapis.com"
+    "datastream.googleapis.com",
+    "bigquery.googleapis.com"
   ])
   service            = each.key
   disable_on_destroy = true
@@ -144,6 +145,16 @@ resource "google_sql_user" "admin_user" {
   password = random_password.admin_password.result
 }
 
+# --- 3. BigQuery Destination ---
+
+# BigQuery Dataset for Datastream destination
+resource "google_bigquery_dataset" "datastream_destination_dataset" {
+  dataset_id = var.bigquery_dataset_name
+  location   = var.bigquery_dataset_location
+  project    = var.project_id
+}
+
+
 # --- 3. Datastream Connectivity (Consumer side of PSC) ---
 
 # Dedicated subnet for the Network Attachment
@@ -210,3 +221,56 @@ resource "google_datastream_connection_profile" "mysql_source_profile" {
   }
   depends_on = [google_datastream_private_connection.default]
 }
+
+# Datastream Connection Profile for BigQuery Destination
+resource "google_datastream_connection_profile" "bigquery_destination_profile" {
+  display_name          = var.bigquery_connection_profile_name
+  location              = var.region
+  connection_profile_id = var.bigquery_connection_profile_name
+  project               = var.project_id
+
+  bigquery_profile {}
+
+  depends_on = [google_project_service.project_services["bigquery.googleapis.com"]]
+}
+
+# --- 4. Datastream Stream ---
+
+resource "google_datastream_stream" "default_stream" {
+  display_name = var.stream_name
+  stream_id    = var.stream_name
+  location     = var.region
+  project      = var.project_id
+  
+
+  source_config {
+    source_connection_profile = google_datastream_connection_profile.mysql_source_profile.id
+    mysql_source_config {
+      # To include all non-system tables from all non-system schemas, 
+      # the include_objects block must be omitted entirely, allowing Datastream
+      # to use its default behavior.
+    }
+  }
+
+  destination_config {
+    destination_connection_profile = google_datastream_connection_profile.bigquery_destination_profile.id
+    bigquery_destination_config {
+      data_freshness = "900s" # 15 minutes
+      
+      source_hierarchy_datasets {
+        dataset_template {
+          location = var.bigquery_dataset_location
+          dataset_id_prefix = google_bigquery_dataset.datastream_destination_dataset.dataset_id
+        }
+      }
+    }
+  }
+
+  backfill_all {}
+
+  depends_on = [
+    google_datastream_connection_profile.mysql_source_profile,
+    google_datastream_connection_profile.bigquery_destination_profile
+  ]
+}
+
