@@ -147,14 +147,18 @@ After the infrastructure is deployed and the Datastream stream is running, you c
     uv run python generate_fake_sql.py --generate-ddl --max-count 1000 > sample_data.sql
     ```
 
-4.  **Connect to the Cloud SQL instance**:
-    The easiest way to connect is by using the **Cloud Shell**.
-    a. Open the [Cloud SQL instances page](https://console.cloud.google.com/sql/instances) in the GCP Console.
-    b. Find your newly created instance (e.g., `mysql-src-ds`) and click on it.
-    c. Click **"Open Cloud Shell"** in the "Connect to this instance" section.
-    d. A `gcloud sql connect` command will be pre-filled in the Cloud Shell. Press Enter to run it and connect to the database. You will be prompted for the `admin` user's password.
+4.  **Connect to the Cloud SQL instance via Cloud SQL Studio**:
+
+    Cloud SQL Studio provides a SQL workbench directly in the GCP Console.
+
+    a. Open the [Cloud SQL instances page](https://console.cloud.google.com/sql/instances) in the GCP Console.<br/>
+    b. Find your newly created instance (e.g., `mysql-src-ds`) and click on its name to open the details page.<br/>
+    c. From the left navigation menu, select **"Cloud SQL Studio"**.<br/>
+    d. In the login panel, enter the username `admin` and the password (which you will retrieve in the next step). The database name is `testdb`.<br/>
+    e. Click **Log in** to open the query editor.<br/>
 
 5.  **Get the Admin Password**:
+
     You can retrieve the generated admin password from the Terraform output in the `02-app-infra` directory.
     ```bash
     cd ../terraform/02-app-infra
@@ -162,13 +166,12 @@ After the infrastructure is deployed and the Datastream stream is running, you c
     ```
 
 6.  **Import the SQL data**:
-    Once connected to the MySQL prompt in the Cloud Shell, you can import the generated data.
-    a. First, upload the `sample_data.sql` file to the Cloud Shell environment. You can do this via the three-dot menu (`...`) in the Cloud Shell toolbar and selecting "Upload".
-    b. At the `mysql>` prompt, run the `source` command:
-    ```sql
-    mysql> source sample_data.sql;
-    ```
-    This will execute all the `CREATE` and `INSERT` statements.
+
+    Once connected to Cloud SQL Studio, you can execute the generated SQL statements.
+
+    a. Open the `sample_data.sql` file that you generated in a local text editor and copy its entire content.<br/>
+    b. Paste the content into the Cloud SQL Studio query editor.<br/>
+    c. Click the **"Run"** button to execute all the `CREATE` and `INSERT` statements.<br/>
 
 7.  **Verify in BigQuery**:
     After a few minutes (depending on Datastream's configured latency), you should see a new dataset (e.g., `datastream_destination_dataset_testdb`) and a `retail_trans` table in your BigQuery project. Query the table to confirm that the data has been replicated.
