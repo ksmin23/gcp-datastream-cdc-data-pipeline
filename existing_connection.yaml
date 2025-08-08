@@ -1,7 +1,0 @@
----
-network: projects/383970867954/global/networks/default
-peering: servicenetworking-googleapis-com
-reservedPeeringRanges:
-- default-ip-range
-- mysql-instance-for-datastream-private-ip
-service: services/servicenetworking.googleapis.com
