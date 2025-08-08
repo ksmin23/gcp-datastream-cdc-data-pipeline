@@ -1,118 +1,190 @@
 # GCP Datastream and Cloud SQL for MySQL using Private Service Connect (PSC)
 
-This Terraform project provisions a complete end-to-end solution for capturing Change Data Capture (CDC) data from a Cloud SQL for MySQL instance using GCP Datastream. The entire connection is established securely and privately using **Private Service Connect (PSC)**, eliminating the need for VPC Peering.
+This Terraform project provisions a complete end-to-end solution for capturing Change Data Capture (CDC) data from a Cloud SQL for MySQL instance and replicating it to BigQuery. The entire connection is established securely and privately using **Private Service Connect (PSC)**.
+
+The infrastructure is deployed in **two distinct stages** to separate network setup from application resources, which is a best practice for managing infrastructure lifecycles.
+
+## Overall Architecture Diagram
+
+```mermaid
+graph LR
+    subgraph "Source Database"
+        SQL[("Cloud SQL for MySQL<br/>(Private IP in Google's VPC)")]
+    end
+
+    subgraph "CDC Replication Pipeline"
+        direction TB
+        Stream("Datastream Stream")
+        subgraph "Secure Connectivity (PSC)"
+            PrivConn("Private Connection") --> NetAttach("Network Attachment")
+        end
+        Stream -- "Reads CDC data via" --> PrivConn
+    end
+
+    subgraph "Data Warehouse Destination"
+        BQ_DS[("BigQuery Dataset")]
+    end
+
+    subgraph "User's VPC Network"
+        direction TB
+        NetAttach -- "Connects into" --> PSCSubnet("Dedicated PSC Subnet")
+        SQL -- "Peered via<br/>Private Services Access" --> UserVPC("Your VPC")
+    end
+
+    SQL -- "Database Changes (CDC)" --> Stream
+    Stream -- "Replicates Data" --> BQ_DS
+
+    classDef gcpBlue fill:#4285F4,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef gcpGreen fill:#34A853,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef gcpYellow fill:#FBBC05,stroke:#fff,stroke-width:2px,color:#fff;
+
+    class SQL,BQ_DS gcpBlue
+    class Stream gcpYellow
+    class UserVPC,PSCSubnet,NetAttach,PrivConn gcpGreen
+```
 
 ## Architecture
 
-This project creates the following architecture:
+### Stage 1: Network (`terraform/01-network`)
 
-1.  **Cloud SQL for MySQL Instance**: A new MySQL 8.0 instance is provisioned with a private IP address. It is configured as the **service producer**, automatically publishing its service via a managed Service Attachment by enabling PSC.
-2.  **Datastream Connectivity**:
-    *   A dedicated subnet is created within your existing VPC for PSC connectivity.
-    *   A **Network Attachment** is created, acting as the connection point for Datastream into your VPC.
-    *   An egress firewall rule is established to allow traffic from the PSC subnet to the Cloud SQL instance's private IP on port 3306.
-    *   A **Datastream Private Connection** resource is configured to use the Network Attachment, establishing the consumer side of the PSC connection.
-3.  **Datastream Connection Profile**: A connection profile is created that uses the private connection to securely access the Cloud SQL instance via its private IP address.
+This stage builds the foundational network infrastructure.
 
-This setup ensures that all data transfer between Datastream and Cloud SQL occurs over Google's private network, without exposing any resources to the public internet.
+1.  **VPC & Subnets**: A new VPC is created in custom mode, with public and private subnets in each availability zone of the specified region.
+2.  **Cloud NAT & Router**: A Cloud Router and NAT gateway are configured to allow instances in the private subnets to access the internet for outbound traffic (e.g., for system updates).
+3.  **Firewall Rules**: Basic firewall rules are created to allow internal traffic, SSH, and ICMP.
+4.  **Service Networking**: A VPC Peering connection is established with Google's services network to enable private access for Cloud SQL.
+5.  **PSC Subnet**: A dedicated subnet is created specifically for Private Service Connect, which Datastream will use.
+
+### Stage 2: Application Infrastructure (`terraform/02-app-infra`)
+
+This stage deploys the application-specific resources on top of the network foundation.
+
+1.  **Cloud SQL for MySQL**: A new MySQL 8.0 instance is provisioned with a private IP address. It is configured as a service producer for PSC.
+2.  **BigQuery Dataset**: A destination dataset is created in BigQuery to store the replicated data.
+3.  **Datastream**:
+    *   A **Network Attachment** is created for PSC connectivity.
+    *   A **Datastream Private Connection** uses the attachment to connect to the VPC.
+    *   Source (MySQL) and Destination (BigQuery) **Connection Profiles** are created.
+    *   A **Datastream Stream** is configured to capture changes from the MySQL source and deliver them to the BigQuery destination.
 
 ## Prerequisites
 
 *   **Terraform**: `v1.5.7` or later
 *   **Google Cloud SDK**: Authenticated to your GCP account (`gcloud auth application-default login`).
-*   **An existing VPC Network**: This project uses a pre-existing VPC. The default is `default`.
+*   **Enabled APIs**: Before starting, ensure the required APIs are enabled. You can run the `gcloud` command provided in the [FAQ](ifaq.md) or let Terraform enable them automatically by running `terraform apply` in each stage.
 
 ## How to Use
 
-1.  **Clone the repository and navigate to this directory.**
+Deployment is a two-stage process. You must deploy the network first, followed by the application infrastructure.
 
-2.  **Configure `terraform.tfvars`**:
-    Create a `terraform.tfvars` file by copying the `terraform.tfvars.example` file.
+### Stage 1: Deploy the Network
 
+1.  **Navigate to the network directory:**
+    ```bash
+    cd terraform/01-network
+    ```
+
+2.  **Create `terraform.tfvars`**:
+    Copy the example file and provide the required values.
     ```bash
     cp terraform.tfvars.example terraform.tfvars
     ```
+    Edit `terraform.tfvars` and set your `project_id` and a unique `psc_subnet_cidr_range`.
 
-    Edit `terraform.tfvars` and provide the required values:
-    *   `project_id`: Your GCP Project ID.
-    *   `allowed_psc_projects`: A list of project IDs that can connect to the Cloud SQL instance. **You must include your own project ID here.**
-    *   `psc_subnet_cidr_range`: A unique `/29` CIDR block that does not overlap with any other subnets in your VPC (e.g., `"10.10.0.0/29"`).
-
-3.  **Initialize Terraform**:
-    Run the following command to download the necessary provider plugins.
+3.  **Initialize and Apply**:
     ```bash
     terraform init
-    ```
-
-4.  **Review and Apply**:
-    Review the execution plan and then apply the configuration.
-    ```bash
     terraform plan
     terraform apply
     ```
     When prompted, type `yes` to confirm the deployment.
 
-## Post-Deployment: Granting User Permissions
+### Stage 2: Deploy the Application Infrastructure
 
-For security, you must manually grant the necessary permissions to the `datastream` user after the instance is created.
-
-1.  Connect to the database using the Cloud Shell or a bastion host.
-2.  Execute the following SQL query:
-    ```sql
-    GRANT REPLICATION SLAVE, SELECT, EXECUTE ON *.* TO 'datastream'@'%';
-    FLUSH PRIVILEGES;
+1.  **Navigate to the app-infra directory:**
+    ```bash
+    cd ../02-app-infra
     ```
 
-## Terraform Resources
+2.  **Create `terraform.tfvars`**:
+    Copy the example file and provide the required values.
+    ```bash
+    cp terraform.tfvars.example terraform.tfvars
+    ```
+    Edit `terraform.tfvars` and set your `project_id` and the `allowed_psc_projects`. Your own project ID must be in this list.
 
-This project creates the following main resources:
+3.  **Initialize and Apply**:
+    ```bash
+    terraform init
+    terraform plan
+    terraform apply
+    ```
+    This will deploy Cloud SQL, BigQuery, and Datastream, referencing the network created in Stage 1.
 
-*   `google_sql_database_instance.mysql_instance`
-*   `google_sql_user.datastream_user`
-*   `google_compute_subnetwork.datastream_psc_subnet`
-*   `google_compute_network_attachment.ds_to_sql_attachment`
-*   `google_compute_firewall.allow_datastream_psc_to_sql`
-*   `google_datastream_private_connection.default`
-*   `google_datastream_connection_profile.mysql_source_profile`
+## Post-Deployment
+
+After deployment, you must:
+
+1.  **Grant SQL Permissions**: Manually grant the necessary permissions to the `datastream` user on the new Cloud SQL instance. See the [FAQ](ifaq.md) for the specific SQL commands.
+2.  **Start the Stream**: The Datastream stream is created in a `NOT_STARTED` state. You must manually start it via the GCP Console or the `gcloud` command provided in the [FAQ](ifaq.md).
+
+## Testing the Pipeline with Fake Data
+
+After the infrastructure is deployed and the Datastream stream is running, you can generate and insert sample data into the Cloud SQL instance to verify that the CDC pipeline is working correctly.
+
+1.  **Navigate to the scripts directory**:
+    ```bash
+    cd ../../scripts 
+    # (If you are in terraform/02-app-infra)
+    ```
+
+2.  **Setup the Python environment**:
+    Follow the instructions in `scripts/README.md` to set up the `uv` virtual environment and install dependencies.
+
+3.  **Generate SQL statements**:
+    Use the script to generate both DDL (for table creation) and DML (for data insertion) and save them to a file.
+    ```bash
+    uv run python generate_fake_sql.py --generate-ddl --max-count 1000 > sample_data.sql
+    ```
+
+4.  **Connect to the Cloud SQL instance**:
+    The easiest way to connect is by using the **Cloud Shell**.
+    a. Open the [Cloud SQL instances page](https://console.cloud.google.com/sql/instances) in the GCP Console.
+    b. Find your newly created instance (e.g., `mysql-src-ds`) and click on it.
+    c. Click **"Open Cloud Shell"** in the "Connect to this instance" section.
+    d. A `gcloud sql connect` command will be pre-filled in the Cloud Shell. Press Enter to run it and connect to the database. You will be prompted for the `admin` user's password.
+
+5.  **Get the Admin Password**:
+    You can retrieve the generated admin password from the Terraform output in the `02-app-infra` directory.
+    ```bash
+    cd ../terraform/02-app-infra
+    terraform output admin_user_password
+    ```
+
+6.  **Import the SQL data**:
+    Once connected to the MySQL prompt in the Cloud Shell, you can import the generated data.
+    a. First, upload the `sample_data.sql` file to the Cloud Shell environment. You can do this via the three-dot menu (`...`) in the Cloud Shell toolbar and selecting "Upload".
+    b. At the `mysql>` prompt, run the `source` command:
+    ```sql
+    mysql> source sample_data.sql;
+    ```
+    This will execute all the `CREATE` and `INSERT` statements.
+
+7.  **Verify in BigQuery**:
+    After a few minutes (depending on Datastream's configured latency), you should see a new dataset (e.g., `datastream_destination_dataset_testdb`) and a `retail_trans` table in your BigQuery project. Query the table to confirm that the data has been replicated.
 
 ## Clean Up
 
-To delete all the resources created by this project, run:
-```bash
-terraform destroy
-```
+To destroy all resources, you must run `terraform destroy` in the reverse order of creation.
 
-## Troubleshooting
-
-### Error: "Cannot modify allocated ranges in CreateConnection"
-
-If you encounter the following error during `terraform apply`, it means that a Service Networking Connection for your VPC already exists and was not created by Terraform.
-
-```
-Error: Error waiting for Create Service Networking Connection: Error code 9, message: Cannot modify allocated ranges in CreateConnection. Please use UpdateConnection.
-```
-
-This happens because Terraform's state is not synchronized with the actual resources in your GCP project. To resolve this, you must import the existing connection into the Terraform state.
-
-**Solution Steps:**
-
-1.  **Add Existing IP Ranges to your `.tfvars` file**:
-    First, identify the existing IP ranges from the error message and add them to a new variable in your `terraform.tfvars` file.
-
-    ```hcl
-    # terraform/terraform.tfvars
-
-    existing_peering_ranges = ["default-ip-range"] 
-    # Add any other ranges listed in the error, e.g., "mysql-instance-for-datastream-private-ip"
-    ```
-    *Note: You will also need to add the `existing_peering_ranges` variable definition to `variables.tf`.*
-
-2.  **Import the Existing Connection**:
-    Run the `terraform import` command to bring the existing resource under Terraform's management. The correct ID format is `{network_name}:{service_name}`.
-
+1.  **Destroy Application Infrastructure**:
     ```bash
-    terraform import 'google_service_networking_connection.private_vpc_connection' 'default:servicenetworking.googleapis.com'
+    cd terraform/02-app-infra
+    terraform destroy
     ```
 
-3.  **Verify and Apply**:
-    Run `terraform plan` to confirm that Terraform now intends to *change* the existing resource instead of creating a new one. If the plan is correct, run `terraform apply` to finalize the changes.
+2.  **Destroy Network**:
+    ```bash
+    cd ../01-network
+    terraform destroy
+    ```

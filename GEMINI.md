@@ -4,98 +4,72 @@ This guide helps AI-based development tools like Gemini understand and interact 
 
 ## Project Overview
 
-This project uses Terraform to manage and provision Google Cloud Platform (GCP) infrastructure. It defines the desired state of the infrastructure in `.tf` files, which Terraform then uses to create, update, and delete resources.
+This project uses Terraform to manage and provision a GCP Datastream pipeline that captures changes from a Cloud SQL for MySQL database and replicates them to BigQuery. The infrastructure is deployed in **two distinct stages**:
 
-## Development Environment Setup
+1.  **`terraform/01-network`**: Provisions the core network infrastructure (VPC, subnets, firewall, NAT, Service Networking).
+2.  **`terraform/02-app-infra`**: Provisions the application-specific resources (Cloud SQL, BigQuery, Datastream) that depend on the network.
 
-To work with this project, you need to have Terraform installed on your system.
+This two-stage approach separates the network lifecycle from the application lifecycle, which is a security and operational best practice.
 
-**Installing Terraform:**
+## Development Workflow
 
-1.  **Download Terraform:** Visit the official Terraform website to download the appropriate package for your operating system: [https://www.terraform.io/downloads.html](https://www.terraform.io/downloads.html)
-2.  **Installation:** Follow the installation instructions provided for your OS. Typically, this involves unzipping the package and adding the Terraform binary to your system's PATH.
+Deployment and management must be performed in order for each stage.
 
-**Setup Steps:**
+### Stage 1: Network (`01-network`)
 
-1.  **Navigate to the Terraform directory:**
-    Open your terminal and change to the `terraform` directory, which contains all the Terraform configuration files.
+1.  **Navigate to the directory:**
     ```bash
-    cd terraform
+    cd terraform/01-network
     ```
-
 2.  **Initialize Terraform:**
-    Run `terraform init` from within the `terraform` directory. This command downloads the necessary provider plugins (in this case, for Google Cloud) and sets up the backend for storing state.
+    This downloads the necessary providers.
     ```bash
     terraform init
+    ```
+3.  **Plan and Apply:**
+    Review and deploy the network resources.
+    ```bash
+    terraform plan
+    terraform apply
+    ```
+
+### Stage 2: Application Infrastructure (`02-app-infra`)
+
+This stage depends on the successful completion of Stage 1. It reads the network configuration from the state file of the first stage.
+
+1.  **Navigate to the directory:**
+    ```bash
+    cd terraform/02-app-infra
+    ```
+2.  **Initialize Terraform:**
+    ```bash
+    terraform init
+    ```
+3.  **Plan and Apply:**
+    Review and deploy the application resources.
+    ```bash
+    terraform plan
+    terraform apply
     ```
 
 ## Core Terraform Commands
 
-The following commands are essential for managing the infrastructure defined in this project and should be run from within the `terraform` directory.
+The following commands are essential for managing the infrastructure and should be run from within the respective stage directory (`01-network` or `02-app-infra`).
 
-1.  **Formatting:**
-    Ensure your code is correctly formatted before proceeding.
-    ```bash
-    terraform fmt
-    ```
-
-2.  **Validation:**
-    Validate the syntax of the Terraform files.
-    ```bash
-    terraform validate
-    ```
-
-3.  **Plan:**
-    Create an execution plan. This command shows you what actions Terraform will take to achieve the desired state defined in your configuration files. It's a dry run and is safe to use at any time.
-    ```bash
-    terraform plan
-    ```
-
-4.  **Apply:**
-    Apply the changes required to reach the desired state. Terraform will show you the plan again and ask for confirmation before making any changes to your infrastructure.
-    ```bash
-    terraform apply
-    ```
-
-5.  **Destroy:**
-    Destroy all the resources managed by this Terraform configuration. This is irreversible.
-    ```bash
-    terraform destroy
-    ```
-
-## Debugging
-
-When you encounter errors while running Terraform commands, it is crucial to refer to the official Terraform documentation for debugging and resolution. The documentation provides detailed explanations of errors and step-by-step guides to fix them.
-
-- [Terraform Documentation](https://www.terraform.io/docs)
-
-## Code Style and Linting
-
-This project follows the standard Terraform conventions. All commands should be run from the `terraform` directory.
-
--   **Formatting:** Use `terraform fmt` to automatically format all `.tf` files in the current directory and its subdirectories.
-    ```bash
-    terraform fmt
-    ```
--   **Linting/Validation:** Use `terraform validate` to check for syntax errors and inconsistencies in your configuration.
-    ```bash
-    terraform validate
-    ```
+*   **`terraform fmt -recursive`**: Format all Terraform files.
+*   **`terraform validate`**: Validate the syntax of the configuration.
+*   **`terraform plan`**: Create an execution plan.
+*   **`terraform apply`**: Apply the changes to the infrastructure.
+*   **`terraform destroy`**: Destroy the resources managed by the configuration.
 
 ## Key Files and Directories
 
-All Terraform files (`.tf`, `.tfvars`) are located within the `terraform/` directory.
-
--   `terraform/main.tf`: The main configuration file, where resources are defined.
--   `terraform/variables.tf`: Contains declarations for input variables used in the configuration.
--   `terraform/outputs.tf`: Defines output values from your Terraform configuration (e.g., IP addresses, instance IDs).
--   `terraform/terraform.tfvars`: A file to provide values for the declared variables. This file is often excluded from version control to avoid committing sensitive information.
--   `terraform/.terraform/`: A local directory where Terraform keeps track of plugins and modules. It's created automatically by `terraform init`.
--   `terraform/.terraform.lock.hcl`: A dependency lock file that records the provider versions used for the configuration.
-
-## Coding Conventions
-
--   **Naming:** Use `snake_case` for all resource names, data source names, and variables.
--   **Resources:** Define resources in a logical and organized manner within `main.tf` or other `.tf` files.
--   **Variables:** Declare all variables in `variables.tf` with clear descriptions. Provide default values where appropriate.
--   **Outputs:** Define meaningful outputs in `outputs.tf` to expose important information about the created infrastructure.
+*   **`terraform/01-network/`**: Contains all configuration for the network infrastructure.
+    *   `vpc.tf`: Defines the VPC, subnets, NAT, router, and firewall rules.
+    *   `outputs.tf`: Defines the outputs (e.g., VPC ID) that are consumed by Stage 2.
+*   **`terraform/02-app-infra/`**: Contains all configuration for the application stack.
+    *   `main.tf`: Defines the provider and the `terraform_remote_state` data source to read from Stage 1.
+    *   `cloudsql_mysql.tf`: Defines the Cloud SQL instance and users.
+    *   `bigquery.tf`: Defines the BigQuery destination dataset.
+    *   `datastream.tf`: Defines all Datastream-related resources.
+*   **`ifaq.md`**: Contains a detailed FAQ about the project's architecture and common issues.

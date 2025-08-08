@@ -1,0 +1,31 @@
+# terraform/01-network/terraform.tfvars.example
+
+# ------------------------------------------------------------------------------
+# REQUIRED VARIABLES
+# ------------------------------------------------------------------------------
+
+# Replace with your GCP Project ID.
+project_id = "your-gcp-project-id"
+
+# A dedicated /29 CIDR block for the Datastream PSC subnet.
+# IMPORTANT: This range must NOT overlap with any existing subnets in your VPC.
+# Example: "10.10.0.0/29"
+psc_subnet_cidr_range = ""
+
+
+# ------------------------------------------------------------------------------
+# OPTIONAL VARIABLES
+# ------------------------------------------------------------------------------
+
+# The GCP region where all network resources will be created.
+# region = "us-central1"
+
+# The name for the new VPC network.
+# vpc_name = "gcp-ds-cdc-vpc"
+
+# The base CIDR block for the public subnets. Subnets for each availability
+# zone will be carved out of this range.
+# public_subnet_cidr = "10.0.0.0/16"
+
+# The base CIDR block for the private subnets.
+# private_subnet_cidr = "10.1.0.0/16"

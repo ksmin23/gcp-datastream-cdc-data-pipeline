@@ -1,4 +1,4 @@
-# variables.tf for gcp-datastream-cdc-data-pipeline
+# terraform/02-app-infra/variables.tf
 
 variable "project_id" {
   description = "The ID of the GCP project."
@@ -9,12 +9,6 @@ variable "region" {
   description = "The GCP region where resources will be created."
   type        = string
   default     = "us-central1"
-}
-
-variable "vpc_name" {
-  description = "The name of the existing VPC network to use."
-  type        = string
-  default     = "default"
 }
 
 variable "db_instance_name" {
@@ -28,11 +22,6 @@ variable "allowed_psc_projects" {
   type        = list(string)
 }
 
-variable "psc_subnet_cidr_range" {
-  description = "A free CIDR range of /29 for the Datastream PSC subnet (e.g., 10.3.0.0/29). Must not overlap with other subnets."
-  type        = string
-}
-
 variable "private_connection_name" {
   description = "The name for the Datastream private connection."
   type        = string
@@ -42,13 +31,7 @@ variable "private_connection_name" {
 variable "connection_profile_name" {
   description = "The name of the connection profile."
   type        = string
-  default     = "mysql-connection-profile-psc"
-}
-
-variable "existing_peering_ranges" {
-  description = "A list of existing peering ranges to preserve in the service networking connection."
-  type        = list(string)
-  default     = []
+  default     = "mysql-source-connection-profile-psc"
 }
 
 variable "bigquery_dataset_name" {
@@ -60,7 +43,7 @@ variable "bigquery_dataset_name" {
 variable "bigquery_dataset_location" {
   description = "The location for the BigQuery dataset."
   type        = string
-  default     = "US" # Or a more specific region like "us-central1"
+  default     = "US"
 }
 
 variable "bigquery_connection_profile_name" {
@@ -74,7 +57,3 @@ variable "stream_name" {
   type        = string
   default     = "mysql-to-bigquery-stream"
 }
-
-
-
-

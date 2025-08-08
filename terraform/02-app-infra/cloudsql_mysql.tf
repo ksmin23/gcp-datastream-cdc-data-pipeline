@@ -1,0 +1,89 @@
+# terraform/02-app-infra/cloudsql_mysql.tf
+
+# Random password for the datastream user
+resource "random_password" "ds_password" {
+  length           = 16
+  special          = true
+  override_special = "!@#$%&*()-_=+[]{}<>:?"
+}
+resource "random_password" "root_password" {
+  length           = 16
+  special          = true
+  override_special = "!@#$%&*()-_=+[]{}<>:?"
+}
+resource "random_password" "admin_password" {
+  length           = 16
+  special          = true
+  override_special = "!@#$%&*()-_=+[]{}<>:?"
+}
+
+# Cloud SQL for MySQL instance
+resource "google_sql_database_instance" "mysql_instance" {
+  name             = var.db_instance_name
+  database_version = "MYSQL_8_0"
+  region           = var.region
+  depends_on = [
+    data.terraform_remote_state.network,
+    google_project_service.project_services["sqladmin.googleapis.com"]
+  ]
+
+  settings {
+    tier = "db-n1-standard-2"
+    backup_configuration {
+      enabled            = true
+      binary_log_enabled = true
+    }
+    ip_configuration {
+      ipv4_enabled    = true
+      private_network = data.terraform_remote_state.network.outputs.vpc_id
+      psc_config {
+        psc_enabled               = true
+        allowed_consumer_projects = var.allowed_psc_projects
+      }
+    }
+    database_flags {
+      name  = "binlog_row_image"
+      value = "full"
+    }
+    database_flags {
+      name  = "max_allowed_packet"
+      value = "1073741824" # 1GB
+    }
+    database_flags {
+      name  = "net_read_timeout"
+      value = "3600"
+    }
+    database_flags {
+      name  = "net_write_timeout"
+      value = "3600"
+    }
+    database_flags {
+      name  = "wait_timeout"
+      value = "86400"
+    }
+    availability_type = "ZONAL"
+    disk_autoresize   = true
+    disk_size         = 20
+  }
+  deletion_protection = false
+}
+
+# SQL User for Datastream
+resource "google_sql_user" "datastream_user" {
+  name     = "datastream"
+  host     = "%"
+  instance = google_sql_database_instance.mysql_instance.name
+  password = random_password.ds_password.result
+}
+resource "google_sql_user" "root_user" {
+  name     = "root"
+  host     = "%"
+  instance = google_sql_database_instance.mysql_instance.name
+  password = random_password.root_password.result
+}
+resource "google_sql_user" "admin_user" {
+  name     = "admin"
+  host     = "%"
+  instance = google_sql_database_instance.mysql_instance.name
+  password = random_password.admin_password.result
+}

@@ -1,0 +1,43 @@
+# terraform/02-app-infra/terraform.tfvars.example
+
+# ------------------------------------------------------------------------------
+# REQUIRED VARIABLES
+# ------------------------------------------------------------------------------
+
+# Replace with your GCP Project ID.
+project_id = "your-gcp-project-id"
+
+# A list of GCP project IDs allowed to connect to the Cloud SQL instance via PSC.
+# IMPORTANT: You must include your own project_id in this list for Datastream to connect.
+# Example: allowed_psc_projects = ["your-gcp-project-id", "another-consumer-project-id"]
+allowed_psc_projects = ["your-gcp-project-id"]
+
+
+# ------------------------------------------------------------------------------
+# OPTIONAL VARIABLES
+# ------------------------------------------------------------------------------
+
+# The GCP region where all application resources will be created.
+# This should typically match the region used in the 01-network configuration.
+# region = "us-central1"
+
+# The name of the Cloud SQL for MySQL instance.
+# db_instance_name = "mysql-src-ds"
+
+# The name for the Datastream private connection resource.
+# private_connection_name = "mysql-private-connection-psc"
+
+# The name for the Datastream source connection profile.
+# connection_profile_name = "mysql-connection-profile-psc"
+
+# The name of the BigQuery dataset to be used as the destination.
+# bigquery_dataset_name = "datastream_destination_dataset"
+
+# The location for the BigQuery dataset (e.g., "US", "us-central1").
+# bigquery_dataset_location = "US"
+
+# The name for the BigQuery destination connection profile.
+# bigquery_connection_profile_name = "bigquery-destination-profile"
+
+# The name for the Datastream stream.
+# stream_name = "mysql-to-bigquery-stream"
