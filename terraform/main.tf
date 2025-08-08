@@ -35,25 +35,26 @@ resource "google_project_service" "project_services" {
     "datastream.googleapis.com",
     "bigquery.googleapis.com"
   ])
-  service            = each.key
-  disable_on_destroy = true
+  service                    = each.key
+  disable_on_destroy         = false
 }
 
 # Private IP allocation for the SQL instance
-# resource "google_compute_global_address" "private_ip_address" {
-#   name          = "${var.db_instance_name}-private-ip"
-#   purpose       = "VPC_PEERING"
-#   address_type  = "INTERNAL"
-#   prefix_length = 16
-#   network       = data.google_compute_network.main_vpc.id
-# }
+resource "google_compute_global_address" "private_ip_address" {
+  # name          = "mysql-instance-for-datastream-private-ip"
+  name          = "gcp-servicenetworking-vpc-peering-range"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = data.google_compute_network.main_vpc.id
+}
 
 # VPC Peering connection for the SQL instance
 resource "google_service_networking_connection" "private_vpc_connection" {
   network = data.google_compute_network.main_vpc.id
   service = "servicenetworking.googleapis.com"
-  # reserved_peering_ranges = concat(var.existing_peering_ranges, [google_compute_global_address.private_ip_address.name])
-  reserved_peering_ranges = var.existing_peering_ranges
+  reserved_peering_ranges = concat(var.existing_peering_ranges, [google_compute_global_address.private_ip_address.name])
+  # reserved_peering_ranges = var.existing_peering_ranges
   depends_on              = [google_project_service.project_services["servicenetworking.googleapis.com"]]
 }
 
@@ -249,6 +250,9 @@ resource "google_datastream_stream" "default_stream" {
       # To include all non-system tables from all non-system schemas, 
       # the include_objects block must be omitted entirely, allowing Datastream
       # to use its default behavior.
+
+      # GTID-based replication
+      gtid {}
     }
   }
 
@@ -273,4 +277,3 @@ resource "google_datastream_stream" "default_stream" {
     google_datastream_connection_profile.bigquery_destination_profile
   ]
 }
-
