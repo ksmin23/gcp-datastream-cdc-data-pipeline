@@ -92,13 +92,12 @@ resource "google_sql_user" "admin_user" {
 # This forwarding rule provides a stable, internal IP address within the VPC
 # for clients like GCE VMs or Serverless connectors to connect to Cloud SQL.
 resource "google_compute_forwarding_rule" "sql_psc_endpoint" {
-  project               = var.project_id
-  name                  = "${var.resource_prefix}-sql-psc-endpoint"
-  region                = var.region
-  network               = data.terraform_remote_state.network.outputs.vpc_id
-  subnetwork            = data.terraform_remote_state.network.outputs.private_subnet_ids[0]
-  load_balancing_scheme = "INTERNAL"
-  target                = google_sql_database_instance.mysql_instance.psc_service_attachment_link
+  project    = var.project_id
+  name       = "${var.resource_prefix}-sql-psc-endpoint"
+  region     = var.region
+  network    = data.terraform_remote_state.network.outputs.vpc_id
+  subnetwork = data.terraform_remote_state.network.outputs.private_subnet_ids[0]
+  target     = google_sql_database_instance.mysql_instance.psc_service_attachment_link
   depends_on = [
     google_sql_database_instance.mysql_instance
   ]
