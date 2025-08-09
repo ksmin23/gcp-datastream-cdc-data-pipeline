@@ -320,7 +320,7 @@ STATE_DETAILS: [OK]
 #### 요약
 
 | 항목 | 내용 |
-| :--- | : -- |
+| :--- | :--- |
 | **확인 위치** | **VPC 네트워크 > VPC 네트워크 피어링** 페이지 |
 | **찾아야 할 이름** | `servicenetworking-googleapis-com` |
 | **핵심 개념** | 비공개 서비스 액세스 (Private Services Access) |
@@ -341,7 +341,7 @@ Terraform 공식 문서에 따르면 `desired_state` 인수의 **명시적인 �
 #### 시나리오별 동작 요약
 
 | `desired_state` 설정 | Terraform 동작 | 최종 Stream 상태 | 설명 |
-| :--- | :--- | :--- | : -- |
+| :--- | :--- | :--- | :--- |
 | **인수 생략 (Omitted)** | API 호출 시 `desired_state` 필드를 포함하지 않음 | **`NOT_STARTED`** | **(GCP API의 기본 동작)** 리소스는 생성되지만, 데이터 복제는 시작되지 않은 상태입니다. |
 | `desired_state = "RUNNING"` | API 호출 시 `desired_state`를 "RUNNING"으로 설정 | `RUNNING` | 리소스 생성 후 즉시 스트림을 시작하여 데이터 복제를 개시합니다. |
 | `desired_state = "PAUSED"` | API 호출 시 `desired_state`를 "PAUSED"으로 설정 | `PAUSED` | 리소스 생성 후 즉시 스트림을 일시 중지 상태로 둡니다. |
