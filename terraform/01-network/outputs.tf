@@ -24,3 +24,8 @@ output "datastream_psc_subnet_cidr" {
   description = "The CIDR of the Datastream PSC subnet."
   value       = google_compute_subnetwork.datastream_psc_subnet.ip_cidr_range
 }
+
+output "private_subnet_ids" {
+  description = "A list of the private subnet IDs."
+  value       = [for s in google_compute_subnetwork.private : s.id]
+}
