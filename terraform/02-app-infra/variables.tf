@@ -57,3 +57,9 @@ variable "stream_name" {
   type        = string
   default     = "mysql-to-bigquery-stream"
 }
+
+variable "resource_prefix" {
+  description = "A prefix used for naming resources to ensure uniqueness and logical grouping."
+  type        = string
+  default     = "gcp-ds-cdc"
+}
