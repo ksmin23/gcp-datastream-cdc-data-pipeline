@@ -435,6 +435,53 @@ When private access from your VPC to Cloud SQL is needed, you have two valid opt
 
 Therefore, if Datastream uses PSC and your VPC also uses PSC to connect to Cloud SQL, **PSA is not needed at all**.
 
+### Q: If a PSC endpoint makes Cloud SQL accessible within the VPC, does that mean any resource in the VPC can connect automatically, or is a firewall rule still needed?
+
+**A:**
+
+That is an excellent and critical question. The short answer is: **No, resources cannot connect automatically. A firewall rule is absolutely necessary.**
+
+While the PSC endpoint creates a private network *path*, it does not grant security *permission*. Access control is still fully managed by VPC firewall rules. This is a crucial security feature, not a limitation.
+
+#### Why is a Firewall Rule Essential? (Think of the PSC Endpoint as a VM)
+
+The easiest way to understand this is to treat the PSC endpoint (the forwarding rule with an internal IP) just like any other virtual machine in your VPC.
+
+1.  **The PSC Endpoint Has an IP**: The endpoint is assigned a stable internal IP address (e.g., `10.10.0.5`) from your VPC's subnet.
+2.  **Firewalls Inspect All Traffic**: GCP's VPC firewall inspects all traffic flowing to and from any resource with an IP address, including PSC endpoints.
+3.  **Default-Deny Policy**: By default, VPCs have an "implied deny" rule for all ingress traffic. Unless you create a specific `ALLOW` rule, traffic from a GCE VM to the PSC endpoint's IP will be blocked.
+
+This is the same principle as needing an `allow-ssh` rule to connect from one VM to another. To connect from a VM to the PSC endpoint on the MySQL port, you need a specific firewall rule to allow that traffic.
+
+#### What Kind of Firewall Rule is Needed?
+
+Following the principle of least privilege, you should create a specific **ingress `ALLOW` rule** that permits MySQL traffic (TCP port 3306) only from authorized sources to the PSC endpoint.
+
+-   **Direction**: `INGRESS`
+-   **Source**: The **network tag** of the GCE VMs that need access (e.g., `app-server`). Using tags is highly recommended over using IP ranges.
+-   **Destination**: The most secure way to define the destination is to use the **destination IP range** field, setting it to the specific IP of your PSC endpoint (e.g., `10.10.0.5/32`).
+-   **Protocols and Ports**: `tcp:3306`
+
+##### Example `gcloud` Command
+
+To allow VMs tagged with `app-server` to connect to the PSC endpoint at `10.10.0.5`, you would create a rule like this:
+
+```bash
+gcloud compute firewall-rules create allow-mysql-to-psc-endpoint \
+    --network=your-vpc-name \
+    --action=ALLOW \
+    --direction=INGRESS \
+    --rules=tcp:3306 \
+    --source-tags=app-server \
+    --destination-ranges=10.10.0.5/32 \
+    --description="Allow MySQL traffic from app servers to the Cloud SQL PSC endpoint"
+```
+This rule ensures that only authorized VMs can access the database via its PSC endpoint, while all other traffic remains blocked.
+
+#### Conclusion
+
+Private Service Connect provides the **private network path**, but **VPC firewall rules** provide the **security and access control**. This separation of concerns is fundamental to a secure cloud architecture, allowing you to maintain fine-grained control over all resources, even those accessed via PSC.
+
 ---
 
 ### Q: What is the `google_compute_forwarding_rule` resource created for PSC? Is it a load balancer or a VM?
