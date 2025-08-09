@@ -71,7 +71,7 @@ This stage deploys the application-specific resources on top of the network foun
 
 *   **Terraform**: `v1.5.7` or later
 *   **Google Cloud SDK**: Authenticated to your GCP account (`gcloud auth application-default login`).
-*   **Enabled APIs**: Before starting, ensure the required APIs are enabled. You can run the `gcloud` command provided in the [FAQ](ifaq.md) or let Terraform enable them automatically by running `terraform apply` in each stage.
+*   **Enabled APIs**: Before starting, ensure the required APIs are enabled. You can run the `gcloud` command provided in the [FAQ](FAQ.md) or let Terraform enable them automatically by running `terraform apply` in each stage.
 
 ## How to Use
 

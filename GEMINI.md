@@ -72,4 +72,4 @@ The following commands are essential for managing the infrastructure and should 
     *   `cloudsql_mysql.tf`: Defines the Cloud SQL instance and users.
     *   `bigquery.tf`: Defines the BigQuery destination dataset.
     *   `datastream.tf`: Defines all Datastream-related resources.
-*   **`ifaq.md`**: Contains a detailed FAQ about the project's architecture and common issues.
+*   **`FAQ.md`**: Contains a detailed FAQ about the project's architecture and common issues.
