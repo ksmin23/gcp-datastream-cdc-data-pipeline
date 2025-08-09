@@ -1,58 +1,69 @@
 # GEMINI.md
 
-This guide helps AI-based development tools like Gemini understand and interact with this project effectively. Its primary purpose is to ensure that any modifications maintain the established architectural principles and coding conventions.
+This guide helps AI-based development tools like Gemini understand and interact with this project effectively. Its primary purpose is to ensure that any modifications maintain the established architectural principles and coding conventions for **both Terraform and Python code**.
 
 ## 1. Core Project Philosophy
 
-The most important principle of this project is the **strict separation of concerns** between network infrastructure and application infrastructure.
+The project is divided into two main parts with distinct purposes:
 
--   **`terraform/01-network`**: Manages foundational, slowly-changing network resources. This is the base layer.
--   **`terraform/02-app-infra`**: Manages application-specific resources that depend on the network. This layer is built upon the base.
+-   **`terraform/`**: Contains the core Infrastructure as Code (IaC) to provision the GCP data pipeline. This is the primary infrastructure definition.
+-   **`scripts/`**: Contains supplementary Python scripts for tasks like generating test data, automation, or validation. This is for operational support, not infrastructure.
 
-**Golden Rule**: Any change must respect this two-stage separation. Never add application resources to the `01-network` stage, and never add foundational network resources to the `02-app-infra` stage. The link between them is the `terraform_remote_state` data source in `02-app-infra`, which reads outputs from `01-network`.
+**Golden Rule**: Maintain the strict separation between these two directories. Terraform code belongs exclusively in `terraform/`, and Python utility scripts belong in `scripts/`.
 
-## 2. Development Workflow
+## 2. Coding and Style Conventions
 
-Always follow the two-stage workflow. Changes must be planned and applied to each stage in order, starting with the network.
+Adherence to language-specific conventions is critical for maintaining project consistency.
 
-1.  Navigate to the correct stage directory (`01-network` or `02-app-infra`).
-2.  Initialize with `terraform init`.
-3.  Always preview changes with `terraform plan` before applying.
-4.  Apply changes with `terraform apply`.
+### 2.1. For Terraform Code (`terraform/` directory)
 
-## 3. Coding and Style Conventions
-
-Adherence to these conventions is critical for maintaining project consistency.
-
-### 3.1. Terraform Conventions
-
--   **Formatting**: All Terraform files (`.tf`) **must** be formatted using `terraform fmt -recursive`. Before committing any change, run this command from the root of the repository.
+-   **Workflow**: All `terraform` commands (`init`, `plan`, `apply`) must be run from within the appropriate stage directory (`01-network` or `02-app-infra`).
+-   **Formatting**: All `.tf` files **must** be formatted using `terraform fmt -recursive`.
 -   **Naming Conventions**:
-    -   **Resources**: Use a consistent `google_resource_type.descriptive_name` format. The name should clearly indicate the resource's purpose. For example: `google_datastream_stream.mysql_to_bigquery_stream`.
-    -   **Variables**: Use `snake_case`. Define all variables in `variables.tf` with a clear `description` and a `type`. Provide sensible defaults where applicable.
-    -   **Outputs**: Use `snake_case`. Define all outputs in `outputs.tf` with a `description`.
--   **File Organization**:
-    -   Keep related resources within the same file. For example, all VPC-related resources (VPC, subnets, firewall rules) are in `vpc.tf`. All Datastream resources are in `datastream.tf`.
-    -   Do not create deeply nested modules. This project prefers a flat file structure within each stage for clarity.
--   **Comments**: Use comments (`#`) sparingly. Focus on explaining the *why* behind a complex configuration, not the *what*.
+    -   **Resources**: `google_resource_type.descriptive_name` (e.g., `google_datastream_stream.mysql_to_bigquery_stream`).
+    -   **Variables & Outputs**: `snake_case`.
+-   **File Organization**: Keep related resources within the same file (e.g., all Datastream resources in `datastream.tf`).
 
-### 3.2. Documentation Conventions (`README.md`, `FAQ.md`)
+### 2.2. For Python Code (`scripts/` directory)
 
--   **`README.md`**: This file should contain a high-level overview, the architecture diagram, and setup/usage instructions. It's the entry point for a human user.
--   **`FAQ.md`**: This file is for detailed, deep-dive questions and answers about specific architectural decisions, common problems, or technical concepts.
--   **Diagrams**: Use `mermaid` syntax for all diagrams to ensure they can be rendered directly in Markdown.
--   **Tone**: Maintain a clear, professional, and helpful tone.
+This project uses `uv` for fast Python environment and package management.
 
-## 4. Guide for Making Changes (for AI Assistants)
+-   **Environment Setup**:
+    1.  Create the virtual environment: `uv venv` (run inside `scripts/`)
+    2.  Activate it: `source .venv/bin/activate`
+    3.  Install dependencies: `uv pip install -r requirements.txt`
+-   **Running Scripts**: Always run scripts through `uv` to ensure the correct environment is used.
+    ```bash
+    # Example from the root directory
+    cd scripts
+    uv run python generate_fake_sql.py --help
+    ```
+-   **Style and Linting**:
+    -   **Formatting**: All Python code must be formatted with **Black**.
+        ```bash
+        uv run black .
+        ```
+    -   **Linting**: Code should be checked with **Ruff**.
+        ```bash
+        uv run ruff check .
+        ```
+-   **Dependency Management**:
+    -   To add a new dependency, add the package name to `scripts/requirements.txt`.
+    -   Then, run `uv pip install -r scripts/requirements.txt` to install it into the virtual environment.
+
+## 3. Guide for Making Changes (for AI Assistants)
 
 When asked to modify the project, follow these steps:
 
-1.  **Identify the Correct Stage**: First, determine if the requested change belongs to `01-network` or `02-app-infra`.
-    -   *Is it a core network component like a VPC, subnet, or firewall rule?* → `01-network`.
-    -   *Is it an application service like Cloud SQL, BigQuery, or Datastream?* → `02-app-infra`.
-2.  **Follow Conventions**:
-    -   Adhere strictly to the naming and formatting conventions outlined in Section 3.
-    -   Place the new resource definition in the appropriate `.tf` file alongside related resources.
-3.  **Validate Your Changes**: Before finalizing, always run `terraform fmt -recursive` and `terraform validate` from the relevant stage directory to ensure correctness and style compliance.
-4.  **Update Documentation**: If the change introduces a new feature, alters the architecture, or might raise new questions, update `README.md` or add a new entry to `FAQ.md`.
-5.  **Commit Message**: Write a clear and concise commit message that explains the change. Use conventional commit prefixes if applicable (e.g., `feat:`, `fix:`, `docs:`).
+1.  **Identify the Context (Terraform or Python)**: First, determine which part of the project the request applies to.
+    -   *Is it about provisioning infrastructure (e.g., "add a new firewall rule")?* → **Terraform context**.
+    -   *Is it about a utility script (e.g., "add a new field to the fake data")?* → **Python context**.
+2.  **Navigate to the Correct Directory**: Before taking any action, change to the relevant directory (`terraform/01-network`, `terraform/02-app-infra`, or `scripts/`).
+3.  **Follow Language-Specific Conventions**:
+    -   For **Terraform**, adhere to the conventions in section 2.1.
+    -   For **Python**, adhere to the conventions in section 2.2. This includes setting up the `uv` environment if it doesn't exist.
+4.  **Validate Your Changes**:
+    -   **Terraform**: Run `terraform fmt` and `terraform validate`.
+    -   **Python**: Run `uv run black .` and `uv run ruff check .`.
+5.  **Update Documentation**: If the change impacts how a user runs the project, update `README.md` or `FAQ.md`.
+6.  **Commit Message**: Write a clear commit message, specifying the context, e.g., `feat(terraform): ...` or `fix(scripts): ...`.
