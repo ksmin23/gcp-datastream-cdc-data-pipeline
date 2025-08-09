@@ -151,21 +151,21 @@ GRANT REPLICATION SLAVE, SELECT, REPLICATION CLIENT ON *.* TO 'datastream'@'%';
 FLUSH PRIVILEGES;
 ```
 
-### 2. Connecting from Your VPC (via PSC Endpoint)
+> **Note on Connecting from Your VPC**
+> 
+> For connections from your applications, scripts, or bastion hosts inside the VPC, you should use the stable **Private Service Connect (PSC) endpoint**. This provides a private, internal IP address for your Cloud SQL instance.
+> 
+> Get the connection details from the `terraform/02-app-infra` directory:
+> ```bash
+> # Use this stable internal IP for your applications
+> terraform output cloud_sql_psc_endpoint_ip
+> 
+> # Use this password for the 'admin' user
+> terraform output admin_user_password
+> ```
+> You would then connect using a standard MySQL client to the IP address provided by the `cloud_sql_psc_endpoint_ip` output.
 
-For all other connections from your applications, scripts, or bastion hosts inside the VPC, you should use the stable **Private Service Connect (PSC) endpoint**. This provides a private, internal IP address for your Cloud SQL instance.
-
-Get the connection details from the `terraform/02-app-infra` directory:
-```bash
-# Use this stable internal IP for your applications
-terraform output cloud_sql_psc_endpoint_ip
-
-# Use this password for the 'admin' user
-terraform output admin_user_password
-```
-You would then connect using a standard MySQL client to the IP address provided by the `cloud_sql_psc_endpoint_ip` output.
-
-### 3. Start the Stream
+### 2. Start the Stream
 
 The Datastream stream is created in a `NOT_STARTED` state. You must manually start it. For example:
 ```bash
@@ -173,6 +173,7 @@ gcloud datastream streams update mysql-to-bigquery-stream \
     --location=us-central1 \
     --state=RUNNING
 ```
+
 
 ## Testing the Pipeline with Fake Data
 
