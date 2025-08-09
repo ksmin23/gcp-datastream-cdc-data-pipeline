@@ -1,4 +1,4 @@
-# GCP Datastream and Cloud SQL for MySQL using Private Service Connect (PSC)
+# Terraform: Datastream Pipeline for Cloud SQL CDC via PSC
 
 This Terraform project provisions a complete end-to-end solution for capturing Change Data Capture (CDC) data from a Cloud SQL for MySQL instance and replicating it to BigQuery. The entire connection is established securely and privately using **Private Service Connect (PSC)**.
 
