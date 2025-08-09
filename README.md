@@ -190,3 +190,11 @@ To destroy all resources, you must run `terraform destroy` in the reverse order 
     cd ../01-network
     terraform destroy
     ```
+
+## References
+
+-   [Quickstart: Replicate data from a Cloud SQL for MySQL database to BigQuery](https://cloud.google.com/datastream/docs/quickstart-replication-to-bigquery)
+-   [Configure a Cloud SQL for MySQL database as a source](https://cloud.google.com/datastream/docs/configure-cloudsql-mysql)
+-   [Configure Private Service Connect interfaces](https://cloud.google.com/datastream/docs/psc-interfaces)
+-   [Codelab: Connecting to CloudSQL via Private Service Connect (Terraform)](https://codelabs.developers.google.com/codelabs/cloudsql-psc-terraform#0)
+-   [Codelab: How to create a Private Services Connect for CloudSQL](https://codelabs.developers.google.com/devsite/codelabs/psc-cloud-sql#0)
