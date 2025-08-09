@@ -3,33 +3,32 @@
 ## Table of Contents
 
 - [Setup & Operations](#setup--operations)
-  - [Q: Which GCP APIs need to be enabled before running `terraform apply`?](#q-which-gcp-apis-need-to-be-enabled-before-running-terraform-apply)
-  - [Q: What is the `gcloud` command to start a Datastream Stream created by `terraform apply`?](#q-what-is-the-gcloud-command-to-start-a-datastream-stream-created-by-terraform-apply)
+  - [1. Q: Which GCP APIs need to be enabled before running `terraform apply`?](#1-q-which-gcp-apis-need-to-be-enabled-before-running-terraform-apply)
+  - [2. Q: What is the `gcloud` command to start a Datastream Stream created by `terraform apply`?](#2-q-what-is-the-gcloud-command-to-start-a-datastream-stream-created-by-terraform-apply)
 - [Terraform & Resource Management](#terraform--resource-management)
-  - [Q: When configuring Datastream and Cloud SQL replication, which resources should be created only once per project and shared?](#q-when-configuring-datastream-and-cloud-sql-replication-which-resources-should-be-created-only-once-per-project-and-shared)
-  - [Q: If I have already created a `google_service_networking_connection` for another Cloud SQL instance (A), can I not create it again for a new instance (B)?](#q-if-i-have-already-created-a-google_service_networking_connection-for-another-cloud-sql-instance-a-can-i-not-create-it-again-for-a-new-instance-b)
-  - [Q: When connecting Datastream and Cloud SQL via PSC, should a Network Attachment be created for each Cloud SQL instance, or just once?](#q-when-connecting-datastream-and-cloud-sql-via-psc-should-a-network-attachment-be-created-for-each-cloud-sql-instance-or-just-once)
-  - [Q: What problems can occur if I create multiple Network Attachments?](#q-what-problems-can-occur-if-i-create-multiple-network-attachments)
+  - [3. Q: When configuring Datastream and Cloud SQL replication, which resources should be created only once per project and shared?](#3-q-when-configuring-datastream-and-cloud-sql-replication-which-resources-should-be-created-only-once-per-project-and-shared)
+  - [4. Q: If I have already created a `google_service_networking_connection` for another Cloud SQL instance (A), can I not create it again for a new instance (B)?](#4-q-if-i-have-already-created-a-google_service_networking_connection-for-another-cloud-sql-instance-a-can-i-not-create-it-again-for-a-new-instance-b)
+  - [5. Q: When connecting Datastream and Cloud SQL via PSC, should a Network Attachment be created for each Cloud SQL instance, or just once?](#5-q-when-connecting-datastream-and-cloud-sql-via-psc-should-a-network-attachment-be-created-for-each-cloud-sql-instance-or-just-once)
+  - [6. Q: What problems can occur if I create multiple Network Attachments?](#6-q-what-problems-can-occur-if-i-create-multiple-network-attachments)
 - [Networking](#networking)
-  - [Q: What GCP resource does the `google_service_networking_connection` Terraform resource block create?](#q-what-gcp-resource-does-the-google_service_networking_connection-terraform-resource-block-create)
-  - [Q: Where can I verify the VPC Peering for a private Cloud SQL connection?](#q-where-can-i-verify-the-vpc-peering-for-a-private-cloud-sql-connection)
-  - [Q: Is it necessary to enable Private Service Access (PSA) for Cloud SQL when connecting from Datastream using Private Service Connect (PSC)?](#q-is-it-necessary-to-enable-private-service-access-psa-for-cloud-sql-when-connecting-from-datastream-using-private-service-connect-psc)
-  - [Q: If Private Service Access (PSA) isn't needed for Datastream with PSC, can a user in the VPC also connect to Cloud SQL securely using only PSC, without PSA?](#q-if-private-service-access-psa-isnt-needed-for-datastream-with-psc-can-a-user-in-the-vpc-also-connect-to-cloud-sql-securely-using-only-psc-without-psa)
-  - [Q: What is the `google_compute_forwarding_rule` resource created for PSC? Is it a load balancer or a VM?](#q-what-is-the-google_compute_forwarding_rule-resource-created-for-psc-is-it-a-load-balancer-or-a-vm)
-  - [Q: Can Cloud Run or App Engine also use Private Service Connect (PSC) to securely access Cloud SQL for MySQL?](#q-can-cloud-run-or-app-engine-also-use-private-service-connect-psc-to-securely-access-cloud-sql-for-mysql)
+  - [7. Q: What GCP resource does the `google_service_networking_connection` Terraform resource block create?](#7-q-what-gcp-resource-does-the-google_service_networking_connection-terraform-resource-block-create)
+  - [8. Q: Where can I verify the VPC Peering for a private Cloud SQL connection?](#8-q-where-can-i-verify-the-vpc-peering-for-a-private-cloud-sql-connection)
+  - [9. Q: Is it necessary to enable Private Service Access (PSA) for Cloud SQL when connecting from Datastream using Private Service Connect (PSC)?](#9-q-is-it-necessary-to-enable-private-service-access-psa-for-cloud-sql-when-connecting-from-datastream-using-private-service-connect-psc)
+  - [10. Q: If Private Service Access (PSA) isn't needed for Datastream with PSC, can a user in the VPC also connect to Cloud SQL securely using only PSC, without PSA?](#10-q-if-private-service-access-psa-isnt-needed-for-datastream-with-psc-can-a-user-in-the-vpc-also-connect-to-cloud-sql-securely-using-only-psc-without-psa)
+  - [11. Q: If a PSC endpoint makes Cloud SQL accessible within the VPC, does that mean any resource in the VPC can connect automatically, or is a firewall rule still needed?](#11-q-if-a-psc-endpoint-makes-cloud-sql-accessible-within-the-vpc-does-that-mean-any-resource-in-the-vpc-can-connect-automatically-or-is-a-firewall-rule-still-needed)
+  - [12. Q: What is the `google_compute_forwarding_rule` resource created for PSC? Is it a load balancer or a VM?](#12-q-what-is-the-google_compute_forwarding_rule-resource-created-for-psc-is-it-a-load-balancer-or-a-vm)
+  - [13. Q: Can Cloud Run or App Engine also use Private Service Connect (PSC) to securely access Cloud SQL for MySQL?](#13-q-can-cloud-run-or-app-engine-also-use-private-service-connect-psc-to-securely-access-cloud-sql-for-mysql)
 - [Datastream](#datastream)
-  - [Q: What is the default value for `desired_state` in the `google_datastream_stream` resource?](#q-what-is-the-default-value-for-desired_state-in-the-google_datastream_stream-resource)
-  - [Q: Considering Datastream's configuration, how are multiple databases and tables stored in BigQuery?](#q-considering-datastreams-configuration-how-are-multiple-databases-and-tables-stored-in-bigquery)
-  - [Q: When using PSC to connect to Cloud SQL, should the Datastream Source Connection Profile use the Cloud SQL private IP or the static IP from the forwarding rule?](#q-when-using-psc-to-connect-to-cloud-sql-should-the-datastream-source-connection-profile-use-the-cloud-sql-private-ip-or-the-static-ip-from-the-forwarding-rule)
-  - [Q: Is it mandatory to enable Private Service Connect (PSC) on a Cloud SQL for MySQL instance to connect to it from Datastream?](#q-is-it-mandatory-to-enable-private-service-connect-psc-on-a-cloud-sql-for-mysql-instance-to-connect-to-it-from-datastream)
-
----
+  - [14. Q: What is the default value for `desired_state` in the `google_datastream_stream` resource?](#14-q-what-is-the-default-value-for-desired_state-in-the-google_datastream_stream-resource)
+  - [15. Q: Considering Datastream's configuration, how are multiple databases and tables stored in BigQuery?](#15-q-considering-datastreams-configuration-how-are-multiple-databases-and-tables-stored-in-bigquery)
+  - [16. Q: When using PSC to connect to Cloud SQL, should the Datastream Source Connection Profile use the Cloud SQL private IP or the static IP from the forwarding rule?](#16-q-when-using-psc-to-connect-to-cloud-sql-should-the-datastream-source-connection-profile-use-the-cloud-sql-private-ip-or-the-static-ip-from-the-forwarding-rule)
+  - [17. Q: Is it mandatory to enable Private Service Connect (PSC) on a Cloud SQL for MySQL instance to connect to it from Datastream?](#17-q-is-it-mandatory-to-enable-private-service-connect-psc-on-a-cloud-sql-for-mysql-instance-to-connect-to-it-from-datastream)
 
 ## Setup & Operations
 
-### Q: Which GCP APIs need to be enabled before running `terraform apply`?
+### 1. Q: Which GCP APIs need to be enabled before running `terraform apply`?
 
-**A:**
+**A1:**
 
 Yes, certainly. Here is a step-by-step list of the APIs that need to be enabled in your GCP project before you run `terraform apply`.
 
@@ -82,9 +81,9 @@ Running this command first will ensure a smooth resource creation process withou
 
 ---
 
-### Q: What is the `gcloud` command to start a Datastream Stream created by `terraform apply`?
+### 2. Q: What is the `gcloud` command to start a Datastream Stream created by `terraform apply`?
 
-**A:**
+**A2:**
 
 The `gcloud` command to start a Datastream Stream that was created in a `NOT_STARTED` state by `terraform apply` is as follows.
 
@@ -118,9 +117,9 @@ If you want to forcibly start the stream even if there are validation warnings, 
 
 ## Terraform & Resource Management
 
-### Q: When configuring Datastream and Cloud SQL replication, which resources should be created only once per project and shared?
+### 3. Q: When configuring Datastream and Cloud SQL replication, which resources should be created only once per project and shared?
 
-**A:**
+**A3:**
 
 Yes, based on the provided Terraform code, here is a summary of the resources that should be **created only once per GCP project and then shared**.
 
@@ -166,9 +165,9 @@ These resources typically act as a "connection" or "configuration" between speci
 
 ---
 
-### Q: If I have already created a `google_service_networking_connection` for another Cloud SQL instance (A), can I not create it again for a new instance (B)?
+### 4. Q: If I have already created a `google_service_networking_connection` for another Cloud SQL instance (A), can I not create it again for a new instance (B)?
 
-**A:**
+**A4:**
 
 That's correct. **You cannot create it again, and you don't need to.**
 
@@ -185,9 +184,9 @@ In a single VPC, you create the `google_service_networking_connection` resource 
 
 ---
 
-### Q: When connecting Datastream and Cloud SQL via PSC, should a Network Attachment be created for each Cloud SQL instance, or just once?
+### 5. Q: When connecting Datastream and Cloud SQL via PSC, should a Network Attachment be created for each Cloud SQL instance, or just once?
 
-**A:**
+**A5:**
 
 The short answer is: **you only need to create the Network Attachment once.**
 
@@ -214,9 +213,9 @@ For a **single VPC network** and **single region** combination, **one Network At
 
 ---
 
-### Q: What problems can occur if I create multiple Network Attachments?
+### 6. Q: What problems can occur if I create multiple Network Attachments?
 
-**A:**
+**A6:**
 
 While it might technically work, creating multiple Network Attachments can lead to several management, cost, and potential performance issues.
 
@@ -239,9 +238,9 @@ Creating multiple Network Attachments is like **unnecessarily building multiple 
 
 ## Networking
 
-### Q: What GCP resource does the `google_service_networking_connection` Terraform resource block create?
+### 7. Q: What GCP resource does the `google_service_networking_connection` Terraform resource block create?
 
-**A:**
+**A7:**
 
 The `google_service_networking_connection` resource is responsible for creating a **private communication channel** between **your VPC network** and the **VPC network of Google-managed services** (e.g., Cloud SQL).
 
@@ -283,9 +282,9 @@ In conclusion, this resource is an essential "network bridge" for integrating yo
 
 ---
 
-### Q: Where can I verify the VPC Peering for a private Cloud SQL connection?
+### 8. Q: Where can I verify the VPC Peering for a private Cloud SQL connection?
 
-**A:**
+**A8:**
 
 That's an excellent question. The VPC Peering used for Cloud SQL's private IP connection is managed slightly differently from standard VPC Peering, and the location to verify it is specific.
 
@@ -349,9 +348,9 @@ If the `servicenetworking-googleapis-com` peering appears with an `ACTIVE` state
 
 ---
 
-### Q: Is it necessary to enable Private Service Access (PSA) for Cloud SQL when connecting from Datastream using Private Service Connect (PSC)?
+### 9. Q: Is it necessary to enable Private Service Access (PSA) for Cloud SQL when connecting from Datastream using Private Service Connect (PSC)?
 
-**A:**
+**A9:**
 
 No, it is **not necessary to enable Private Service Access (PSA)**.
 
@@ -387,9 +386,9 @@ Understanding the difference between these two technologies is key. Both provide
 
 ---
 
-### Q: If Private Service Access (PSA) isn't needed for Datastream with PSC, can a user in the VPC also connect to Cloud SQL securely using only PSC, without PSA?
+### 10. Q: If Private Service Access (PSA) isn't needed for Datastream with PSC, can a user in the VPC also connect to Cloud SQL securely using only PSC, without PSA?
 
-**A:**
+**A10:**
 
 Yes, absolutely. When you need to securely access Cloud SQL for MySQL from within your VPC (e.g., from a GCE VM), you can **connect using only Private Service Connect (PSC) without needing Private Service Access (PSA)**. In fact, for modern architectures, this is often the recommended approach.
 
@@ -434,10 +433,9 @@ When private access from your VPC to Cloud SQL is needed, you have two valid opt
 2.  **Using PSC**: Create an endpoint (an internal IP) in your VPC that points to Cloud SQL (the modern method).
 
 Therefore, if Datastream uses PSC and your VPC also uses PSC to connect to Cloud SQL, **PSA is not needed at all**.
+### 11. Q: If a PSC endpoint makes Cloud SQL accessible within the VPC, does that mean any resource in the VPC can connect automatically, or is a firewall rule still needed?
 
-### Q: If a PSC endpoint makes Cloud SQL accessible within the VPC, does that mean any resource in the VPC can connect automatically, or is a firewall rule still needed?
-
-**A:**
+**A11:**
 
 That is an excellent and critical question. The short answer is: **No, resources cannot connect automatically. A firewall rule is absolutely necessary.**
 
@@ -484,9 +482,9 @@ Private Service Connect provides the **private network path**, but **VPC firewal
 
 ---
 
-### Q: What is the `google_compute_forwarding_rule` resource created for PSC? Is it a load balancer or a VM?
+### 12. Q: What is the `google_compute_forwarding_rule` resource created for PSC? Is it a load balancer or a VM?
 
-**A:**
+**A12:**
 
 That's an excellent question, as the nature of this resource can be confusing.
 
@@ -542,9 +540,9 @@ Therefore, the `google_compute_forwarding_rule` we are creating is not a VM or a
 
 ---
 
-### Q: Can Cloud Run or App Engine also use Private Service Connect (PSC) to securely access Cloud SQL for MySQL?
+### 13. Q: Can Cloud Run or App Engine also use Private Service Connect (PSC) to securely access Cloud SQL for MySQL?
 
-**A:**
+**A13:**
 
 Yes, absolutely. **Cloud Run and App Engine can use Private Service Connect (PSC) to securely and privately access Cloud SQL for MySQL.**
 
@@ -592,7 +590,7 @@ The App Engine Flexible environment is different. Its services run as GCE VM ins
 | **App Engine Flexible** | **Direct Connection** | PSC Endpoint |
 | **Compute Engine (GCE)** | **Direct Connection** | PSC Endpoint |
 
----  
+---
 
 #### Why Use This Approach? (Advantages)
 
@@ -628,9 +626,9 @@ The official Google Cloud documentation supporting this answer includes:
 
 ## Datastream
 
-### Q: What is the default value for `desired_state` in the `google_datastream_stream` resource?
+### 14. Q: What is the default value for `desired_state` in the `google_datastream_stream` resource?
 
-**A:**
+**A14:**
 
 According to the official Terraform documentation, the `desired_state` argument has **no explicit default value**.
 
@@ -648,9 +646,9 @@ Therefore, if you omit the `desired_state` line from your code, the Stream will 
 
 ---
 
-### Q: Considering Datastream's configuration, how are multiple databases and tables stored in BigQuery?
+### 15. Q: Considering Datastream's configuration, how are multiple databases and tables stored in BigQuery?
 
-**A:**
+**A15:**
 
 Datastream preserves the **hierarchy** of the source (MySQL) in the destination (BigQuery).
 
@@ -706,9 +704,9 @@ This metadata enables sophisticated, time-based data analysis.
 
 ---
 
-### Q: When using PSC to connect to Cloud SQL, should the Datastream Source Connection Profile use the Cloud SQL private IP or the static IP from the forwarding rule?
+### 16. Q: When using PSC to connect to Cloud SQL, should the Datastream Source Connection Profile use the Cloud SQL private IP or the static IP from the forwarding rule?
 
-**A:**
+**A16:**
 
 That's an excellent question that gets to the core of the PSC architecture. It's an easy point of confusion, but the two connection paths are distinctly different.
 
@@ -778,9 +776,9 @@ The official Google Cloud documentation that supports this distinction is as fol
 
 ---
 
-### Q: Is it mandatory to enable Private Service Connect (PSC) on a Cloud SQL for MySQL instance to connect to it from Datastream?
+### 17. Q: Is it mandatory to enable Private Service Connect (PSC) on a Cloud SQL for MySQL instance to connect to it from Datastream?
 
-**A:**
+**A17:**
 
 Yes, that's correct. **To connect to a Cloud SQL for MySQL instance from Datastream using Private Service Connect (PSC), you must enable PSC on the target Cloud SQL instance.**
 
