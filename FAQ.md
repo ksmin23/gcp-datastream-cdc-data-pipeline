@@ -342,7 +342,7 @@ Understanding the difference between these two technologies is key. Both provide
 | :--- | :--- | :--- |
 | **Core Concept** | **VPC Peering** | **Service Endpoint** |
 | **Connection Model** | **VPC-to-VPC Connection**<br>Connects your entire VPC to a Google services VPC. | **Service-to-VPC Connection**<br>Exposes a specific service (like a Cloud SQL instance) as an internal IP address inside your VPC. |
-| **IP Management** | Requires you to **reserve** an IP range in your VPC. | Does not require a reserved IP range.<br>It consumes a single internal IP address from your VPC's subnet. |
+| **IP Management** | Requires you to **reserve** an IP range in your VPC. | Does not require a reserved IP range.<br>It consumes a single internal IP address from your VPC's own subnet. |
 | **Analogy** | **A Private Bridge**<br>Builds a bridge connecting your city to the Google services city. | **A Private Entrance**<br>Creates a dedicated entrance for a specific partner (Cloud SQL) inside your own building. |
 | **Key Resource** | `google_service_networking_connection` | `google_compute_network_attachment`<br>(Used by the service producer, consumed by a forwarding rule) |
 
@@ -424,7 +424,7 @@ The short answer is that the `google_compute_forwarding_rule` resource, in this 
 
 The most accurate analogy is a **"smart virtual entry point"** or a **"network endpoint"** that lives inside your VPC.
 
---- 
+---
 
 #### Detailed Explanation: The True Nature of a Forwarding Rule
 
@@ -705,3 +705,35 @@ The official Google Cloud documentation that supports this distinction is as fol
 2.  **Connect to an instance using Private Service Connect**
     *   [https://cloud.google.com/sql/docs/mysql/connect-private-service-connect](https://cloud.google.com/sql/docs/mysql/connect-private-service-connect)
     *   This document explains how clients (like a VM) connect via PSC. The "Connect using PSC" section shows that the client must connect to the **IP address of the forwarding rule**, which acts as the PSC endpoint.
+
+---
+
+### Q: Is it mandatory to enable Private Service Connect (PSC) on a Cloud SQL for MySQL instance to connect to it from Datastream?
+
+**A:**
+
+Yes, that's correct. **To connect to a Cloud SQL for MySQL instance from Datastream using Private Service Connect (PSC), you must enable PSC on the target Cloud SQL instance.**
+
+#### Why is this mandatory?
+
+Private Service Connect operates on a "producer" and "consumer" model.
+
+1.  **Service Producer**: This is the service being offered. In this scenario, **Cloud SQL for MySQL** is the producer. Enabling PSC on Cloud SQL creates a **Service Attachment**, which is an internal endpoint that exposes the service. This is equivalent to announcing, "Our service is ready to accept connections via PSC."
+
+2.  **Service Consumer**: This is the service that uses the published service. In this case, **Datastream** is the consumer. When you configure a Private Connection in Datastream to use PSC, it looks for the Service Attachment published by Cloud SQL to establish a private link.
+
+Therefore, if the Cloud SQL instance does not enable PSC to expose itself as a "service producer," Datastream will have no target to connect to, making a PSC connection impossible.
+
+#### Official Documentation
+
+This requirement is detailed in the official Google Cloud documentation:
+
+1.  **About Private Service Connect for Cloud SQL**:
+    *   This document explains the concept of enabling PSC on Cloud SQL to publish the instance as a service.
+    *   **Link**: [https://cloud.google.com/sql/docs/mysql/private-service-connect](https://cloud.google.com/sql/docs/mysql/private-service-connect)
+
+2.  **Configure a private connection for Datastream**:
+    *   This guide for setting up a private connection from Datastream to a source presupposes that the source (Cloud SQL) has already been exposed via PSC.
+    *   **Link**: [https://cloud.google.com/datastream/docs/configure-private-connectivity](https://cloud.google.com/datastream/docs/configure-private-connectivity)
+
+In short, for Datastream to "knock on the door" of Cloud SQL via PSC, Cloud SQL must first "open the door" by enabling PSC.
