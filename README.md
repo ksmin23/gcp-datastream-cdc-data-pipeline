@@ -123,10 +123,48 @@ Deployment is a two-stage process. You must deploy the network first, followed b
 
 ## Post-Deployment
 
-After deployment, you must:
+After deployment, you must complete two manual steps: granting permissions to the Datastream user and starting the replication stream.
 
-1.  **Grant SQL Permissions**: Manually grant the necessary permissions to the `datastream` user on the new Cloud SQL instance. See the [FAQ](ifaq.md) for the specific SQL commands.
-2.  **Start the Stream**: The Datastream stream is created in a `NOT_STARTED` state. You must manually start it via the GCP Console or the `gcloud` command provided in the [FAQ](ifaq.md).
+### 1. Grant SQL Permissions
+
+You need to connect to the newly created Cloud SQL instance and grant the necessary permissions to the `datastream` user.
+
+#### a. Get the Admin Password
+
+You can retrieve the generated admin password from the Terraform output. First, navigate to the `terraform/02-app-infra` directory and run the following command:
+```bash
+terraform output admin_user_password
+```
+
+#### b. Connect to the Database via Cloud SQL Studio
+
+Cloud SQL Studio provides a SQL workbench directly in the GCP Console.
+
+1.  Open the [Cloud SQL instances page](https://console.cloud.google.com/sql/instances) in the GCP Console.
+2.  Find your newly created instance (e.g., `mysql-src-ds`) and click on its name to open the details page.
+3.  From the left navigation menu, select **"Cloud SQL Studio"**.
+4.  In the login panel, enter the username `admin` and the password you retrieved in the previous step. The database name is `testdb`.
+5.  Click **Log in** to open the query editor.
+
+#### c. Execute the GRANT Command
+
+In the Cloud SQL Studio query editor, run the following SQL commands to grant the required permissions for CDC replication.
+```sql
+GRANT REPLICATION SLAVE, SELECT, REPLICATION CLIENT ON *.* TO 'datastream'@'%';
+FLUSH PRIVILEGES;
+```
+
+### 2. Start the Stream
+
+The Datastream stream is created in a `NOT_STARTED` state. You must manually start it via the GCP Console or the `gcloud` command.
+
+For example, if your stream is named `mysql-to-bigquery-stream` and is in the `us-central1` region, run the following command:
+
+```bash
+gcloud datastream streams update mysql-to-bigquery-stream \
+    --location=us-central1 \
+    --state=RUNNING
+```
 
 ## Testing the Pipeline with Fake Data
 
