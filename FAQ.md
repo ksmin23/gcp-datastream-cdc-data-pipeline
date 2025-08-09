@@ -328,6 +328,62 @@ If the `servicenetworking-googleapis-com` peering appears with an `ACTIVE` state
 
 ---
 
+### Q: Is it necessary to enable Private Service Access (PSA) for Cloud SQL when connecting from Datastream using Private Service Connect (PSC)?
+
+**A:**
+
+No, it is **not necessary to enable Private Service Access (PSA)**.
+
+The short answer is that PSC and PSA are **two different methods for private connectivity**. Datastream is designed to use PSC, which functions independently of PSA.
+
+#### Detailed Explanation: Private Service Connect (PSC) vs. Private Service Access (PSA)
+
+Understanding the difference between these two technologies is key. Both provide private connectivity, but they operate differently and have distinct use cases.
+
+| Feature | **Private Service Access (PSA)** | **Private Service Connect (PSC)** |
+| :--- | :--- | :--- |
+| **Core Concept** | **VPC Peering** | **Service Endpoint** |
+| **Connection Model** | **VPC-to-VPC Connection**<br>Connects your entire VPC to a Google services VPC. | **Service-to-VPC Connection**<br>Exposes a specific service (like a Cloud SQL instance) as an internal IP address inside your VPC. |
+| **IP Management** | Requires you to **reserve** an IP range in your VPC. | Does not require a reserved IP range.<br>It consumes a single internal IP address from your VPC's subnet. |
+| **Analogy** | **A Private Bridge**<br>Builds a bridge connecting your city to the Google services city. | **A Private Entrance**<br>Creates a dedicated entrance for a specific partner (Cloud SQL) inside your own building. |
+| **Key Resource** | `google_service_networking_connection` | `google_compute_network_attachment`<br>(Used by the service producer, consumed by a forwarding rule) |
+
+#### Why Datastream Doesn't Need PSA
+
+1.  **Datastream is a Service Consumer:** Datastream needs to connect to a specific published service (Cloud SQL). PSC is designed precisely for this service-centric connection model.
+
+2.  **PSC's Connection Method:**
+    *   The Cloud SQL instance acts as a "published service."
+    *   Datastream accesses this published service through a **Network Attachment** created in your VPC.
+    *   This process establishes a private path to the service itself, independent of the VPC-wide peering created by PSA. Therefore, building the PSA "bridge" is not required for this scenario.
+
+#### Summary
+
+*   **Private Service Access (PSA)** uses **VPC Peering** to connect your VPC to a Google services VPC.
+*   **Private Service Connect (PSC)** exposes a specific service as a **private endpoint** inside your VPC.
+*   Datastream uses **PSC** to connect to Cloud SQL.
+*   Therefore, in a scenario where you are connecting Datastream to Cloud SQL via PSC, **you do not need to enable PSA.**
+
+---
+
+### References
+
+The official Google Cloud documentation referenced to formulate this answer is as follows:
+
+1.  **Overview of private connectivity options in Datastream**
+    *   [https://cloud.google.com/datastream/docs/private-connectivity](https://cloud.google.com/datastream/docs/private-connectivity)
+    *   This document explains that while Datastream supports both VPC Peering and Private Service Connect, PSC is the more recommended approach.
+
+2.  **Configure connectivity using Private Service Connect**
+    *   [https://cloud.google.com/datastream/docs/configure-connectivity-private-service-connect](https://cloud.google.com/datastream/docs/configure-connectivity-private-service-connect)
+    *   This guide describes the specific procedures and required resources (like `Network Attachment`) for setting up PSC in Datastream.
+
+3.  **Private Services Access**
+    *   [https://cloud.google.com/vpc/docs/private-services-access](https://cloud.google.com/vpc/docs/private-services-access)
+    *   This document provides a detailed explanation of the concepts and operational model of PSA (based on VPC Peering), which helps in understanding its differences from PSC.
+
+---
+
 ## Datastream
 
 ### Q: What is the default value for `desired_state` in the `google_datastream_stream` resource?
