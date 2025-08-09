@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `{database}`.`{table}` (
 ) ENGINE=InnoDB AUTO_INCREMENT=0;
 '''
 
-INSERT_SQL_FMT = '''INSERT INTO {database}.{table} (customer_id, event, sku, amount, device, trans_datetime) VALUES("{customer_id}", "{event}", "{sku}", {amount}, "{device}", "{trans_datetime}");'''
+INSERT_SQL_FMT = '''INSERT INTO {database}.{table} (trans_id, customer_id, event, sku, amount, device, trans_datetime) VALUES({trans_id}, "{customer_id}", "{event}", "{sku}", {amount}, "{device}", "{trans_datetime}");'''
 
 def main():
   parser = argparse.ArgumentParser(description="Generate fake retail transaction data as SQL statements.")
@@ -40,6 +40,8 @@ def main():
   parser.add_argument('--max-count', type=int, default=None,
     help='Number of INSERT statements. Defaults to 0 if --generate-ddl is used, otherwise 100.')
   parser.add_argument('--generate-ddl', action='store_true', help='Generate CREATE DATABASE and CREATE TABLE statements.')
+  parser.add_argument('--start-pkid', type=int, default=1,
+    help='The starting AUTO_INCREMENT value for the primary key (default: 1).')
 
   options = parser.parse_args()
   fake = Faker()
@@ -50,7 +52,7 @@ def main():
 
   if options.generate_ddl:
     print(CREATE_DATABASE_SQL_FMT.format(database=options.database))
-    print(CREATE_TABLE_SQL_FMT.format(database=options.database, table=options.table))
+    print(CREATE_TABLE_SQL_FMT.format(database=options.database, table=options.table, start_pkid=options.start_pkid))
     print('-- DDL statements generated.\n')
 
   if options.max_count <= 0:
@@ -60,10 +62,12 @@ def main():
 
   START_DATETIME = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
 
+  pk_counter = options.start_pkid
   for _ in range(options.max_count):
     event = fake.random_element(elements=['visit', 'view', 'cart', 'list', 'like', 'purchase'])
     amount = fake.pyint(max_value=100) if event in ['cart', 'purchase'] else 1
     json_record = {
+      'trans_id': pk_counter,
       'device': fake.random_element(elements=['pc', 'mobile', 'tablet']),
       'event': event,
       'sku': fake.pystr_format(string_format='??%###????', letters=string.ascii_uppercase),
@@ -74,6 +78,7 @@ def main():
     
     sql_stmt = INSERT_SQL_FMT.format(database=options.database, table=options.table, **json_record)
     print(sql_stmt)
+    pk_counter += 1
 
   print(f'-- [INFO] Total {options.max_count} INSERT statements generated.', file=sys.stderr)
 
