@@ -366,6 +366,56 @@ Understanding the difference between these two technologies is key. Both provide
 
 ---
 
+### Q: If Private Service Access (PSA) isn't needed for Datastream with PSC, can a user in the VPC also connect to Cloud SQL securely using only PSC, without PSA?
+
+**A:**
+
+Yes, absolutely. When you need to securely access Cloud SQL for MySQL from within your VPC (e.g., from a GCE VM), you can **connect using only Private Service Connect (PSC) without needing Private Service Access (PSA)**. In fact, for modern architectures, this is often the recommended approach.
+
+#### How is it possible to connect from the VPC using only PSC?
+
+This is possible because PSC makes the Cloud SQL instance appear **as if it were a native resource within your own VPC**.
+
+##### How PSC Works for In-VPC Access
+
+1.  **Service Publishing**: The Cloud SQL instance makes itself available as a "published service" via PSC, ready for authorized consumers to connect.
+2.  **Endpoint Creation**: You create a PSC **endpoint** within your own VPC that points to this published Cloud SQL service.
+    *   In GCP, the actual resource for this endpoint is a **Forwarding Rule**.
+    *   This forwarding rule is assigned an **internal IP address from your VPC's own subnet**.
+3.  **Connection**: Now, VMs or other resources inside your VPC connect to Cloud SQL using this new internal IP address, not the original Cloud SQL IP.
+    *   For example, from a VM, you could connect directly using `mysql -h 10.10.0.5 ...`, where `10.10.0.5` is the internal IP in your VPC.
+    *   All network traffic is securely routed through Google's backbone network to the Cloud SQL instance.
+
+This approach is like creating a "private entrance" (PSC endpoint) to Cloud SQL inside your VPC, instead of building a "bridge" (PSA) that connects the entire VPC.
+
+#### Comparison: PSA vs. PSC (for VPC-to-Cloud SQL Access)
+
+| Feature | **Private Service Access (PSA)** | **Private Service Connect (PSC)** |
+| :--- | :--- | :--- |
+| **Connection Method** | **VPC Peering** | **Endpoint** |
+| **IP Address** | Uses a reserved IP range (separate from your subnets) | **Uses an internal IP from your subnet** |
+| **Network Management** | Requires managing peering routes and firewall rules | Managed like any other internal resource with firewall rules |
+| **Flexibility** | Less flexible (VPC-to-VPC) | Highly flexible (per-service endpoint) |
+| **IP Conflict Risk** | Potential for IP range conflicts with peered network | **No IP conflict risk** |
+
+#### Why is PSC a More Modern Approach?
+
+*   **Simplified IP Management**: It uses your VPC's native IP scheme, making it intuitive to manage.
+*   **Simplified Network Policies**: PSC endpoints can be treated like regular VMs, making it easy to apply existing firewall rules and security policies.
+*   **No IP Overlap Issues**: It inherently avoids the classic problem of IP range conflicts that can occur with VPC peering.
+*   **Easier On-Premises Connectivity**: On-premises environments connected via VPN or Interconnect can easily access the PSC endpoint without complex custom route advertisements.
+
+#### Summary
+
+When private access from your VPC to Cloud SQL is needed, you have two valid options:
+
+1.  **Using PSA**: Peer your VPC with the Google services VPC (the traditional method).
+2.  **Using PSC**: Create an endpoint (an internal IP) in your VPC that points to Cloud SQL (the modern method).
+
+Therefore, if Datastream uses PSC and your VPC also uses PSC to connect to Cloud SQL, **PSA is not needed at all.**
+
+---
+
 ### References
 
 The official Google Cloud documentation referenced to formulate this answer is as follows:
