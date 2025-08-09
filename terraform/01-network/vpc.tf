@@ -91,6 +91,10 @@ resource "google_compute_firewall" "allow_ssh" {
 }
 
 # --- 5. Service Networking for Cloud SQL ---
+# NOTE: This Private Service Access (PSA) configuration is a prerequisite for provisioning
+# a Cloud SQL instance with a private IP. However, all actual client connections
+# (from Datastream, GCE, etc.) will be made through a Private Service Connect (PSC)
+# endpoint created in the 02-app-infra module for a more modern and flexible architecture.
 resource "google_compute_global_address" "private_ip_address" {
   name          = "gcp-servicenetworking-vpc-peering-range"
   purpose       = "VPC_PEERING"

@@ -42,3 +42,8 @@ output "admin_user_password" {
   value       = random_password.admin_password.result
   sensitive   = true
 }
+
+output "cloud_sql_psc_endpoint_ip" {
+  description = "The internal IP address of the PSC Endpoint for Cloud SQL. Use this IP for all in-VPC connections."
+  value       = google_compute_forwarding_rule.sql_psc_endpoint.ip_address
+}

@@ -123,43 +123,51 @@ Deployment is a two-stage process. You must deploy the network first, followed b
 
 ## Post-Deployment
 
-After deployment, you must complete two manual steps: granting permissions to the Datastream user and starting the replication stream.
+After deployment, you must complete a few manual steps.
 
 ### 1. Grant SQL Permissions
 
-You need to connect to the newly created Cloud SQL instance and grant the necessary permissions to the `datastream` user.
+You need to connect to the newly created Cloud SQL instance to grant permissions. The easiest way to perform this one-time setup is by using **Cloud SQL Studio**.
 
-#### a. Get the Admin Password
+#### a. Get Admin Password
 
-You can retrieve the generated admin password from the Terraform output. First, navigate to the `terraform/02-app-infra` directory and run the following command:
+First, retrieve the generated admin password from the Terraform output. From the `terraform/02-app-infra` directory, run:
 ```bash
 terraform output admin_user_password
 ```
 
-#### b. Connect to the Database via Cloud SQL Studio
-
-Cloud SQL Studio provides a SQL workbench directly in the GCP Console.
+#### b. Connect via Cloud SQL Studio
 
 1.  Open the [Cloud SQL instances page](https://console.cloud.google.com/sql/instances) in the GCP Console.
-2.  Find your newly created instance (e.g., `mysql-src-ds`) and click on its name to open the details page.
-3.  From the left navigation menu, select **"Cloud SQL Studio"**.
-4.  In the login panel, enter the username `admin` and the password you retrieved in the previous step. The database name is `testdb`.
-5.  Click **Log in** to open the query editor.
+2.  Find your instance (e.g., `mysql-src-ds`) and click its name.
+3.  From the left menu, select **"Cloud SQL Studio"**.
+4.  Log in with the username `admin` and the password from the previous step. The database name is `testdb`.
 
 #### c. Execute the GRANT Command
 
-In the Cloud SQL Studio query editor, run the following SQL commands to grant the required permissions for CDC replication.
+In the Cloud SQL Studio query editor, run the following SQL commands:
 ```sql
 GRANT REPLICATION SLAVE, SELECT, REPLICATION CLIENT ON *.* TO 'datastream'@'%';
 FLUSH PRIVILEGES;
 ```
 
-### 2. Start the Stream
+### 2. Connecting from Your VPC (via PSC Endpoint)
 
-The Datastream stream is created in a `NOT_STARTED` state. You must manually start it via the GCP Console or the `gcloud` command.
+For all other connections from your applications, scripts, or bastion hosts inside the VPC, you should use the stable **Private Service Connect (PSC) endpoint**. This provides a private, internal IP address for your Cloud SQL instance.
 
-For example, if your stream is named `mysql-to-bigquery-stream` and is in the `us-central1` region, run the following command:
+Get the connection details from the `terraform/02-app-infra` directory:
+```bash
+# Use this stable internal IP for your applications
+terraform output cloud_sql_psc_endpoint_ip
 
+# Use this password for the 'admin' user
+terraform output admin_user_password
+```
+You would then connect using a standard MySQL client to the IP address provided by the `cloud_sql_psc_endpoint_ip` output.
+
+### 3. Start the Stream
+
+The Datastream stream is created in a `NOT_STARTED` state. You must manually start it. For example:
 ```bash
 gcloud datastream streams update mysql-to-bigquery-stream \
     --location=us-central1 \
@@ -168,7 +176,7 @@ gcloud datastream streams update mysql-to-bigquery-stream \
 
 ## Testing the Pipeline with Fake Data
 
-After the infrastructure is deployed and the Datastream stream is running, you can generate and insert sample data into the Cloud SQL instance to verify that the CDC pipeline is working correctly.
+After the infrastructure is deployed and the stream is running, you can insert sample data to verify the pipeline.
 
 1.  **Navigate to the scripts directory**:
     ```bash
@@ -180,39 +188,18 @@ After the infrastructure is deployed and the Datastream stream is running, you c
     Follow the instructions in `scripts/README.md` to set up the `uv` virtual environment and install dependencies.
 
 3.  **Generate SQL statements**:
-    Use the script to generate both DDL (for table creation) and DML (for data insertion) and save them to a file.
     ```bash
     uv run python generate_fake_sql.py --generate-ddl --max-count 1000 > sample_data.sql
     ```
 
-4.  **Connect to the Cloud SQL instance via Cloud SQL Studio**:
+4.  **Import the SQL data via Cloud SQL Studio**:
+    The simplest way to import the data is to use Cloud SQL Studio again.
+    a. Connect to your database in Cloud SQL Studio as described in the "Post-Deployment" section.
+    b. Open the `sample_data.sql` file in a text editor and copy its contents.
+    c. Paste the SQL into the query editor and click **"Run"**.
 
-    Cloud SQL Studio provides a SQL workbench directly in the GCP Console.
-
-    a. Open the [Cloud SQL instances page](https://console.cloud.google.com/sql/instances) in the GCP Console.<br/>
-    b. Find your newly created instance (e.g., `mysql-src-ds`) and click on its name to open the details page.<br/>
-    c. From the left navigation menu, select **"Cloud SQL Studio"**.<br/>
-    d. In the login panel, enter the username `admin` and the password (which you will retrieve in the next step). The database name is `testdb`.<br/>
-    e. Click **Log in** to open the query editor.<br/>
-
-5.  **Get the Admin Password**:
-
-    You can retrieve the generated admin password from the Terraform output in the `02-app-infra` directory.
-    ```bash
-    cd ../terraform/02-app-infra
-    terraform output admin_user_password
-    ```
-
-6.  **Import the SQL data**:
-
-    Once connected to Cloud SQL Studio, you can execute the generated SQL statements.
-
-    a. Open the `sample_data.sql` file that you generated in a local text editor and copy its entire content.<br/>
-    b. Paste the content into the Cloud SQL Studio query editor.<br/>
-    c. Click the **"Run"** button to execute all the `CREATE` and `INSERT` statements.<br/>
-
-7.  **Verify in BigQuery**:
-    After a few minutes (depending on Datastream's configured latency), you should see a new dataset (e.g., `datastream_destination_dataset_testdb`) and a `retail_trans` table in your BigQuery project. Query the table to confirm that the data has been replicated.
+5.  **Verify in BigQuery**:
+    After a few minutes, you should see a new dataset (e.g., `datastream_destination_dataset_testdb`) and a `retail_trans` table in your BigQuery project. Query the table to confirm that the data has been replicated.
 
 ## Clean Up
 
