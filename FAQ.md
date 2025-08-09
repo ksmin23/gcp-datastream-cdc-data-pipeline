@@ -14,8 +14,6 @@ For both stages to execute successfully, the APIs below must be **enabled in adv
 
 #### Complete List of Required APIs
 
-The following is a comprehensive list of all APIs required to create the resources in this project.
-
 1.  **Compute Engine API**: `compute.googleapis.com`
     *   **Purpose**: Creates and manages all networking resources, including VPCs, subnets, firewall rules, Cloud Routers, Cloud NAT, and Network Attachments.
     *   **Required in Stage**: `01-network`, `02-app-infra`
