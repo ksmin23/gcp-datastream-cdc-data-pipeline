@@ -8,39 +8,12 @@ The infrastructure is deployed in **two distinct stages** to separate network se
 
 ```mermaid
 graph LR
-    subgraph "Source Database"
-        SQL[("Cloud SQL for MySQL<br/>(Private IP in Google's VPC)")]
-    end
+    A[(Cloud SQL<br/>for MySQL)] --"CDC via<br/>Private Service Connect"--> DS(Datastream)
+    DS --"Real-time Stream"--> BQ[(BigQuery)]
 
-    subgraph "CDC Replication Pipeline"
-        direction TB
-        Stream("Datastream Stream")
-        subgraph "Secure Connectivity (PSC)"
-            PrivConn("Private Connection") --> NetAttach("Network Attachment")
-        end
-        Stream -- "Reads CDC data via" --> PrivConn
-    end
-
-    subgraph "Data Warehouse Destination"
-        BQ_DS[("BigQuery Dataset")]
-    end
-
-    subgraph "User's VPC Network"
-        direction TB
-        NetAttach -- "Connects into" --> PSCSubnet("Dedicated PSC Subnet")
-        SQL -- "Peered via<br/>Private Services Access" --> UserVPC("Your VPC")
-    end
-
-    SQL -- "Database Changes (CDC)" --> Stream
-    Stream -- "Replicates Data" --> BQ_DS
-
-    classDef gcpBlue fill:#4285F4,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef gcpGreen fill:#34A853,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef gcpYellow fill:#FBBC05,stroke:#fff,stroke-width:2px,color:#fff;
-
-    class SQL,BQ_DS gcpBlue
-    class Stream gcpYellow
-    class UserVPC,PSCSubnet,NetAttach,PrivConn gcpGreen
+    style A fill:#4285F4,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style BQ fill:#4285F4,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style DS fill:#F4B400,stroke:#ffffff,stroke-width:2px,color:#ffffff
 ```
 
 ## Architecture
