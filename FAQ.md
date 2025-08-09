@@ -424,7 +424,7 @@ The short answer is that the `google_compute_forwarding_rule` resource, in this 
 
 The most accurate analogy is a **"smart virtual entry point"** or a **"network endpoint"** that lives inside your VPC.
 
----
+--- 
 
 #### Detailed Explanation: The True Nature of a Forwarding Rule
 
@@ -471,106 +471,6 @@ This process creates the magical effect of making an external service like Cloud
 Therefore, the `google_compute_forwarding_rule` we are creating is not a VM or a load balancer. It is a lightweight, fully-managed network resource whose sole purpose is to **create a stable, private, internal IP address for the Cloud SQL instance inside your VPC.**
 
 ---
-
-### Q: Can Cloud Run or App Engine also use Private Service Connect (PSC) to securely access Cloud SQL for MySQL?
-
-**A:**
-
-Yes, absolutely. **Cloud Run and App Engine can use Private Service Connect (PSC) to securely and privately access Cloud SQL for MySQL.**
-
-However, the connection method is slightly different from a GCE VM and requires an additional component called the **Serverless VPC Access Connector**.
-
----
-
-#### Detailed Explanation: How Serverless Environments Integrate with PSC
-
-Cloud Run and App Engine Standard run in a Google-managed serverless environment, outside of your VPC. For these services to access resources inside your VPC (including a PSC endpoint), they first need a "bridge" into your network. The **Serverless VPC Access Connector** serves as that bridge.
-
-##### 1. Cloud Run and App Engine Standard Environment
-
-Both of these services use the same mechanism.
-
-**How it works:**
-
-1.  **Create a PSC Endpoint**: First, as described previously, you create a PSC endpoint (a forwarding rule with an internal IP) in your VPC that points to the Cloud SQL instance.
-2.  **Create a VPC Access Connector**: You create a Serverless VPC Access Connector in the same region as your VPC. This connector acts as a tunnel between the serverless environment and your VPC.
-3.  **Attach the Connector to Your Service**: When deploying your Cloud Run or App Engine service, you configure it to use this VPC Access Connector.
-4.  **Connect**: The code in your service can now connect directly to the internal IP address of the PSC endpoint.
-    *   This traffic is routed through the VPC Access Connector into your VPC.
-    *   Once inside the VPC, the traffic is securely routed through the PSC endpoint to the Cloud SQL instance.
-
-**Connection Flow Summary:**
-`Cloud Run/App Engine Standard` → `Serverless VPC Access Connector` → `Your VPC` → `PSC Endpoint (Internal IP)` → `Cloud SQL`
-
-##### 2. App Engine Flexible Environment
-
-The App Engine Flexible environment is different. Its services run as GCE VM instances **within your project's VPC**.
-
-**How it works:**
-
-*   Since the App Engine Flex application already exists inside your VPC, **no VPC Access Connector is needed**.
-*   It can connect directly to the PSC endpoint's internal IP address, exactly like a standard GCE VM.
-
----
-
-#### Architecture Comparison Summary
-
-| Service | Connection Method | Key Components Required |
-| :--- | :--- | :--- |
-| **Cloud Run** | Indirect Connection | **Serverless VPC Access Connector** + PSC Endpoint |
-| **App Engine Standard** | Indirect Connection | **Serverless VPC Access Connector** + PSC Endpoint |
-| **App Engine Flexible** | **Direct Connection** | PSC Endpoint |
-| **Compute Engine (GCE)** | **Direct Connection** | PSC Endpoint |
-
----
-
-#### Why Use This Approach? (Advantages)
-
-*   **Consistent Network Policy**: All private traffic to Cloud SQL (from VMs, serverless, etc.) can be centralized through a single PSC endpoint, allowing for consistent firewall and network policy management.
-*   **Complete Privacy**: The Cloud SQL instance does not need a public IP address, and all traffic remains on Google's internal network, maximizing security.
-*   **Avoids PSA Complexity**: Since it doesn't use VPC Peering (PSA), there are no concerns about IP range conflicts or complex peering route management.
-
-#### Summary
-
-Cloud Run and App Engine Standard can privately connect to Cloud SQL by first entering the VPC via a **Serverless VPC Access Connector** and then accessing a **PSC endpoint** created within the VPC. App Engine Flexible, being already inside the VPC, can connect directly to the PSC endpoint without a connector.
-
-This architecture is one of the standard methods for modern serverless applications to communicate securely and efficiently with Google Cloud's managed database services.
-
----
-
-### References
-
-The official Google Cloud documentation supporting this answer includes:
-
-1.  **Serverless VPC Access overview**
-    *   [https://cloud.google.com/vpc/docs/serverless-vpc-access](https://cloud.google.com/vpc/docs/serverless-vpc-access)
-    *   The core document explaining the concept of the VPC Access Connector and how it enables serverless environments to access VPC resources.
-
-2.  **Connect to a VPC network from Cloud Run**
-    *   [https://cloud.google.com/run/docs/configuring/connecting-vpc](https://cloud.google.com/run/docs/configuring/connecting-vpc)
-    *   Guides on how to configure a Cloud Run service with a VPC Access Connector to access resources with internal IP addresses (including PSC endpoints).
-
-3.  **Connect to an instance using Private Service Connect**
-    *   [https://cloud.google.com/sql/docs/mysql/connect-private-service-connect](https://cloud.google.com/sql/docs/mysql/connect-private-service-connect)
-    *   Details the process of creating the PSC endpoint within the VPC, which is the target the serverless service will ultimately connect to.
-
----
-
-### References
-
-The official Google Cloud documentation referenced to formulate this answer is as follows:
-
-1.  **Overview of private connectivity options in Datastream**
-    *   [https://cloud.google.com/datastream/docs/private-connectivity](https://cloud.google.com/datastream/docs/private-connectivity)
-    *   This document explains that while Datastream supports both VPC Peering and Private Service Connect, PSC is the more recommended approach.
-
-2.  **Configure connectivity using Private Service Connect**
-    *   [https://cloud.google.com/datastream/docs/configure-connectivity-private-service-connect](https://cloud.google.com/datastream/docs/configure-connectivity-private-service-connect)
-    *   This guide describes the specific procedures and required resources (like `Network Attachment`) for setting up PSC in Datastream.
-
-3.  **Private Services Access**
-    *   [https://cloud.google.com/vpc/docs/private-services-access](https://cloud.google.com/vpc/docs/private-services-access)
-    *   This document provides a detailed explanation of the concepts and operational model of PSA (based on VPC Peering), which helps in understanding its differences from PSC.
 
 ### Q: Can Cloud Run or App Engine also use Private Service Connect (PSC) to securely access Cloud SQL for MySQL?
 
@@ -733,3 +633,75 @@ Each table created in BigQuery includes all the columns from the source table, p
 | `datastream_metadata.is_deleted` | A `BOOLEAN` value indicating whether the row was `DELETE`d at the source (Soft-delete). |
 
 This metadata enables sophisticated, time-based data analysis.
+
+---
+
+### Q: When using PSC to connect to Cloud SQL, should the Datastream Source Connection Profile use the Cloud SQL private IP or the static IP from the forwarding rule?
+
+**A:**
+
+That's an excellent question that gets to the core of the PSC architecture. It's an easy point of confusion, but the two connection paths are distinctly different.
+
+The short answer is: **No. You must use the Cloud SQL instance's unique private IP for the Datastream Source Connection Profile.**
+
+You should **not** use the static IP of the Forwarding Rule that was created for clients connecting from within your VPC.
+
+Here’s a detailed explanation of why they are different and how each path works.
+
+---
+
+#### Detailed Explanation: Two Independent Connection Paths
+
+In this architecture, there are two completely separate private paths to Cloud SQL: one for Datastream and one for clients inside your VPC.
+
+##### Path 1: Datastream → Cloud SQL (Service-to-Service Connection)
+
+This path is for one Google-managed service (Datastream) to connect to another (Cloud SQL).
+
+1.  **Who is connecting?**: The Datastream service itself, which runs in Google's managed environment, outside of your VPC.
+2.  **How does it access the VPC?**: Datastream uses a `PrivateConnection` resource, which secures a "connection point" to your VPC via a **`Network Attachment`**. The Network Attachment is not an IP address; it's a "gateway" or "dedicated entrance" that allows a specific service (Datastream) to enter your VPC.
+3.  **How does it find Cloud SQL?**: Once connected to your VPC network via the Network Attachment, Datastream can directly resolve and route to the Cloud SQL instance's unique private IP address using Google's internal networking. This IP address belongs to the service networking range allocated via Private Services Access (PSA).
+4.  **Conclusion**: Datastream has no knowledge of the Forwarding Rule you created, nor does it need any. It enters through the Network Attachment and then communicates directly with Cloud SQL's actual private IP.
+
+##### Path 2: VPC Internal Client (e.g., GCE VM) → Cloud SQL (Client-to-Service Connection)
+
+This path is for resources inside your VPC (like VMs or Cloud Run services) to connect to Cloud SQL.
+
+1.  **Who is connecting?**: A GCE VM, a GKE Pod with an IP from your VPC subnet, or a serverless service connected via a VPC Access Connector.
+2.  **What IP is needed?**: These clients need a destination IP address that is routable from within their own VPC subnet. Cloud SQL's unique private IP (in the PSA range) is not directly routable from within the VPC by default.
+3.  **How does it connect?**: This is where the **Forwarding Rule** and its static IP are used.
+    *   The Forwarding Rule creates an internal IP address (e.g., `10.10.0.5`) within your VPC's subnet.
+    *   Clients inside the VPC send connection requests to this `10.10.0.5` address.
+    *   The Forwarding Rule then transparently takes this request and forwards it through PSC to the actual Cloud SQL instance.
+4.  **Conclusion**: To clients inside the VPC, Cloud SQL's actual private IP is invisible. They must use the static IP of the Forwarding Rule, which acts as a "representative" or "proxy" inside the VPC.
+
+#### Comparison Summary
+
+| Feature | Datastream Connection | VPC Internal Client Connection |
+| :--- | :--- | :--- |
+| **Connecting Entity** | Datastream Service (External to VPC) | GCE VM, Cloud Run, etc. (Internal to VPC) |
+| **Network Entry Point** | Network Attachment | Forwarding Rule's IP Address |
+| **IP Address to Use** | **Cloud SQL's unique private IP** | **Forwarding Rule's static internal IP** |
+| **Purpose** | Data Replication (CDC) | Application Database Access |
+| **Analogy** | A dedicated service entrance | A public-facing reception desk |
+
+#### Final Summary
+
+Therefore, you must use two different IP addresses for two different use cases:
+
+*   **For the Datastream Source Connection Profile**: Use the actual private IP of the Cloud SQL instance (e.g., the output of `terraform output cloud_sql_instance_private_ip`).
+*   **For applications/VMs inside your VPC**: Use the static internal IP of the Forwarding Rule (e.g., the output of `terraform output cloud_sql_psc_endpoint_ip`).
+
+---
+
+### References
+
+The official Google Cloud documentation that supports this distinction is as follows:
+
+1.  **Create a source connection profile for MySQL**
+    *   [https://cloud.google.com/datastream/docs/create-a-source-connection-profile-for-mysql#create-a-connection-profile-for-mysql](https://cloud.google.com/datastream/docs/create-a-source-connection-profile-for-mysql#create-a-connection-profile-for-mysql)
+    *   In the "Connectivity method" section, when "Private connectivity" is selected, the documentation specifies that you must enter the **private IP address of the Cloud SQL instance** in the "Hostname or IP address" field. This clearly shows that Datastream uses the instance's actual IP, not a forwarding rule.
+
+2.  **Connect to an instance using Private Service Connect**
+    *   [https://cloud.google.com/sql/docs/mysql/connect-private-service-connect](https://cloud.google.com/sql/docs/mysql/connect-private-service-connect)
+    *   This document explains how clients (like a VM) connect via PSC. The "Connect using PSC" section shows that the client must connect to the **IP address of the forwarding rule**, which acts as the PSC endpoint.
