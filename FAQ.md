@@ -432,6 +432,88 @@ The official Google Cloud documentation referenced to formulate this answer is a
     *   [https://cloud.google.com/vpc/docs/private-services-access](https://cloud.google.com/vpc/docs/private-services-access)
     *   This document provides a detailed explanation of the concepts and operational model of PSA (based on VPC Peering), which helps in understanding its differences from PSC.
 
+### Q: Can Cloud Run or App Engine also use Private Service Connect (PSC) to securely access Cloud SQL for MySQL?
+
+**A:**
+
+Yes, absolutely. **Cloud Run and App Engine can use Private Service Connect (PSC) to securely and privately access Cloud SQL for MySQL.**
+
+However, the connection method is slightly different from a GCE VM and requires an additional component called the **Serverless VPC Access Connector**.
+
+---
+
+#### Detailed Explanation: How Serverless Environments Integrate with PSC
+
+Cloud Run and App Engine Standard run in a Google-managed serverless environment, outside of your VPC. For these services to access resources inside your VPC (including a PSC endpoint), they first need a "bridge" into your network. The **Serverless VPC Access Connector** serves as that bridge.
+
+##### 1. Cloud Run and App Engine Standard Environment
+
+Both of these services use the same mechanism.
+
+**How it works:**
+
+1.  **Create a PSC Endpoint**: First, as described previously, you create a PSC endpoint (a forwarding rule with an internal IP) in your VPC that points to the Cloud SQL instance.
+2.  **Create a VPC Access Connector**: You create a Serverless VPC Access Connector in the same region as your VPC. This connector acts as a tunnel between the serverless environment and your VPC.
+3.  **Attach the Connector to Your Service**: When deploying your Cloud Run or App Engine service, you configure it to use this VPC Access Connector.
+4.  **Connect**: The code in your service can now connect directly to the internal IP address of the PSC endpoint.
+    *   This traffic is routed through the VPC Access Connector into your VPC.
+    *   Once inside the VPC, the traffic is securely routed through the PSC endpoint to the Cloud SQL instance.
+
+**Connection Flow Summary:**
+`Cloud Run/App Engine Standard` → `Serverless VPC Access Connector` → `Your VPC` → `PSC Endpoint (Internal IP)` → `Cloud SQL`
+
+##### 2. App Engine Flexible Environment
+
+The App Engine Flexible environment is different. Its services run as GCE VM instances **within your project's VPC**.
+
+**How it works:**
+
+*   Since the App Engine Flex application already exists inside your VPC, **no VPC Access Connector is needed**.
+*   It can connect directly to the PSC endpoint's internal IP address, exactly like a standard GCE VM.
+
+---
+
+#### Architecture Comparison Summary
+
+| Service | Connection Method | Key Components Required |
+| :--- | :--- | :--- |
+| **Cloud Run** | Indirect Connection | **Serverless VPC Access Connector** + PSC Endpoint |
+| **App Engine Standard** | Indirect Connection | **Serverless VPC Access Connector** + PSC Endpoint |
+| **App Engine Flexible** | **Direct Connection** | PSC Endpoint |
+| **Compute Engine (GCE)** | **Direct Connection** | PSC Endpoint |
+
+---
+
+#### Why Use This Approach? (Advantages)
+
+*   **Consistent Network Policy**: All private traffic to Cloud SQL (from VMs, serverless, etc.) can be centralized through a single PSC endpoint, allowing for consistent firewall and network policy management.
+*   **Complete Privacy**: The Cloud SQL instance does not need a public IP address, and all traffic remains on Google's internal network, maximizing security.
+*   **Avoids PSA Complexity**: Since it doesn't use VPC Peering (PSA), there are no concerns about IP range conflicts or complex peering route management.
+
+#### Summary
+
+Cloud Run and App Engine Standard can privately connect to Cloud SQL by first entering the VPC via a **Serverless VPC Access Connector** and then accessing a **PSC endpoint** created within the VPC. App Engine Flexible, being already inside the VPC, can connect directly to the PSC endpoint without a connector.
+
+This architecture is one of the standard methods for modern serverless applications to communicate securely and efficiently with Google Cloud's managed database services.
+
+---
+
+### References
+
+The official Google Cloud documentation supporting this answer includes:
+
+1.  **Serverless VPC Access overview**
+    *   [https://cloud.google.com/vpc/docs/serverless-vpc-access](https://cloud.google.com/vpc/docs/serverless-vpc-access)
+    *   The core document explaining the concept of the VPC Access Connector and how it enables serverless environments to access VPC resources.
+
+2.  **Connect to a VPC network from Cloud Run**
+    *   [https://cloud.google.com/run/docs/configuring/connecting-vpc](https://cloud.google.com/run/docs/configuring/connecting-vpc)
+    *   Guides on how to configure a Cloud Run service with a VPC Access Connector to access resources with internal IP addresses (including PSC endpoints).
+
+3.  **Connect to an instance using Private Service Connect**
+    *   [https://cloud.google.com/sql/docs/mysql/connect-private-service-connect](https://cloud.google.com/sql/docs/mysql/connect-private-service-connect)
+    *   Details the process of creating the PSC endpoint within the VPC, which is the target the serverless service will ultimately connect to.
+
 ---
 
 ## Datastream
