@@ -51,7 +51,19 @@ This project uses `uv` for fast Python environment and package management.
     -   To add a new dependency, add the package name to `scripts/requirements.txt`.
     -   Then, run `uv pip install -r scripts/requirements.txt` to install it into the virtual environment.
 
-## 3. Guide for Making Changes (for AI Assistants)
+## 3. Key Files and Directories
+
+-   `terraform/`: Top-level directory containing all infrastructure code.
+    -   `terraform/01-network/`: Defines foundational network infrastructure like VPC and subnets.
+    -   `terraform/02-app-infra/`: Defines core application infrastructure like Datastream, Cloud SQL, and BigQuery.
+        -   `main.tf`: Provider and backend configuration.
+        -   `datastream.tf`: Datastream stream and configuration definitions.
+        -   `variables.tf`: Terraform variable declarations.
+-   `scripts/`: Directory for supplementary Python scripts for tasks like data generation and management.
+    -   `generate_fake_sql.py`: Script to generate fake SQL data for testing.
+    -   `requirements.txt`: Python script dependencies.
+
+## 4. Guide for Making Changes (for AI Assistants)
 
 When asked to modify the project, follow these steps:
 
@@ -68,7 +80,7 @@ When asked to modify the project, follow these steps:
 5.  **Update Documentation**: If the change impacts how a user runs the project, update `README.md` or `FAQ.md`.
 6.  **Commit Message**: Write a clear commit message, specifying the context, e.g., `feat(terraform): ...` or `fix(scripts): ...`.
 
-## 4. AI Assistant Guide: How to Use Library Documentation
+## 5. AI Assistant Guide: How to Use Library Documentation
 
 When you need to consult official library documentation to fix a bug or write code, you must follow this workflow. This provides more accurate and structured information than a general web search.
 
