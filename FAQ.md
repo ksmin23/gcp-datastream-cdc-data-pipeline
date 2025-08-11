@@ -2,35 +2,35 @@
 
 ## Table of Contents
 
-- [Setup & Operations](#setup--operations)
-  - [1. Q: Which GCP APIs need to be enabled before running `terraform apply`?](#1-q-which-gcp-apis-need-to-be-enabled-before-running-terraform-apply)
-  - [2. Q: What is the `gcloud` command to start a Datastream Stream created by `terraform apply`?](#2-q-what-is-the-gcloud-command-to-start-a-datastream-stream-created-by-terraform-apply)
-- [Terraform & Resource Management](#terraform--resource-management)
-  - [3. Q: When configuring Datastream and Cloud SQL replication, which resources should be created only once per project and shared?](#3-q-when-configuring-datastream-and-cloud-sql-replication-which-resources-should-be-created-only-once-per-project-and-shared)
-  - [4. Q: If I have already created a `google_service_networking_connection` for another Cloud SQL instance (A), can I not create it again for a new instance (B)?](#4-q-if-i-have-already-created-a-google_service_networking_connection-for-another-cloud-sql-instance-a-can-i-not-create-it-again-for-a-new-instance-b)
-  - [5. Q: When connecting Datastream and Cloud SQL via PSC, should a Network Attachment be created for each Cloud SQL instance, or just once?](#5-q-when-connecting-datastream-and-cloud-sql-via-psc-should-a-network-attachment-be-created-for-each-cloud-sql-instance-or-just-once)
-  - [6. Q: What problems can occur if I create multiple Network Attachments?](#6-q-what-problems-can-occur-if-i-create-multiple-network-attachments)
-- [Networking](#networking)
-  - [7. Q: What GCP resource does the `google_service_networking_connection` Terraform resource block create?](#7-q-what-gcp-resource-does-the-google_service_networking_connection-terraform-resource-block-create)
-  - [8. Q: Where can I verify the VPC Peering for a private Cloud SQL connection?](#8-q-where-can-i-verify-the-vpc-peering-for-a-private-cloud-sql-connection)
-  - [9. Q: Is it necessary to enable Private Service Access (PSA) for Cloud SQL when connecting from Datastream using Private Service Connect (PSC)?](#9-q-is-it-necessary-to-enable-private-service-access-psa-for-cloud-sql-when-connecting-from-datastream-using-private-service-connect-psc)
-  - [10. Q: If Private Service Access (PSA) isn't needed for Datastream with PSC, can a user in the VPC also connect to Cloud SQL securely using only PSC, without PSA?](#10-q-if-private-service-access-psa-isnt-needed-for-datastream-with-psc-can-a-user-in-the-vpc-also-connect-to-cloud-sql-securely-using-only-psc-without-psa)
-  - [11. Q: If a PSC endpoint makes Cloud SQL accessible within the VPC, does that mean any resource in the VPC can connect automatically, or is a firewall rule still needed?](#11-q-if-a-psc-endpoint-makes-cloud-sql-accessible-within-the-vpc-does-that-mean-any-resource-in-the-vpc-can-connect-automatically-or-is-a-firewall-rule-still-needed)
-  - [12. Q: What is the `google_compute_forwarding_rule` resource created for PSC? Is it a load balancer or a VM?](#12-q-what-is-the-google_compute_forwarding_rule-resource-created-for-psc-is-it-a-load-balancer-or-a-vm)
-  - [13. Q: Can Cloud Run or App Engine also use Private Service Connect (PSC) to securely access Cloud SQL for MySQL?](#13-q-can-cloud-run-or-app-engine-also-use-private-service-connect-psc-to-securely-access-cloud-sql-for-mysql)
-  - [18. Q: What is the relationship between VPC Peering and GCP managed services like Cloud SQL or Vertex AI?](#18-q-what-is-the-relationship-between-vpc-peering-and-gcp-managed-services-like-cloud-sql-or-vertex-ai)
-  - [19. Q: How do firewall rules work in a private connectivity environment (PSA vs. PSC)?](#19-q-how-do-firewall-rules-work-in-a-private-connectivity-environment-psa-vs-psc)
-- [Datastream](#datastream)
-  - [14. Q: What is the default value for `desired_state` in the `google_datastream_stream` resource?](#14-q-what-is-the-default-value-for-desired_state-in-the-google_datastream_stream-resource)
-  - [15. Q: Considering Datastream's configuration, how are multiple databases and tables stored in BigQuery?](#15-q-considering-datastreams-configuration-how-are-multiple-databases-and-tables-stored-in-bigquery)
-  - [16. Q: When using PSC to connect to Cloud SQL, should the Datastream Source Connection Profile use the Cloud SQL private IP or the static IP from the forwarding rule?](#16-q-when-using-psc-to-connect-to-cloud-sql-should-the-datastream-source-connection-profile-use-the-cloud-sql-private-ip-or-the-static-ip-from-the-forwarding-rule)
-  - [17. Q: Is it mandatory to enable Private Service Connect (PSC) on a Cloud SQL for MySQL instance to connect to it from Datastream?](#17-q-is-it-mandatory-to-enable-private-service-connect-psc-on-a-cloud-sql-for-mysql-instance-to-connect-to-it-from-datastream)
+- [1. General Concepts & Setup](#1-general-concepts--setup)
+  - [1.1. Q: Which GCP APIs need to be enabled before running `terraform apply`?](#11-q-which-gcp-apis-need-to-be-enabled-before-running-terraform-apply)
+  - [1.2. Q: What is the relationship between VPC Peering and GCP managed services like Cloud SQL or Vertex AI?](#12-q-what-is-the-relationship-between-vpc-peering-and-gcp-managed-services-like-cloud-sql-or-vertex-ai)
+  - [1.3. Q: What GCP resource does the `google_service_networking_connection` Terraform resource block create?](#13-q-what-gcp-resource-does-the-google_service_networking_connection-terraform-resource-block-create)
+  - [1.4. Q: Where can I verify the VPC Peering for a private Cloud SQL connection?](#14-q-where-can-i-verify-the-vpc-peering-for-a-private-cloud-sql-connection)
+  - [1.5. Q: How do firewall rules work in a private connectivity environment (PSA vs. PSC)?](#15-q-how-do-firewall-rules-work-in-a-private-connectivity-environment-psa-vs-psc)
+- [2. Terraform & Resource Management](#2-terraform--resource-management)
+  - [2.1. Q: When configuring Datastream and Cloud SQL replication, which resources should be created only once per project and shared?](#21-q-when-configuring-datastream-and-cloud-sql-replication-which-resources-should-be-created-only-once-per-project-and-shared)
+  - [2.2. Q: If I have already created a `google_service_networking_connection` for another Cloud SQL instance (A), can I not create it again for a new instance (B)?](#22-q-if-i-have-already-created-a-google_service_networking_connection-for-another-cloud-sql-instance-a-can-i-not-create-it-again-for-a-new-instance-b)
+  - [2.3. Q: When connecting Datastream and Cloud SQL via PSC, should a Network Attachment be created for each Cloud SQL instance, or just once?](#23-q-when-connecting-datastream-and-cloud-sql-via-psc-should-a-network-attachment-be-created-for-each-cloud-sql-instance-or-just-once)
+  - [2.4. Q: What problems can occur if I create multiple Network Attachments?](#24-q-what-problems-can-occur-if-i-create-multiple-network-attachments)
+- [3. Private Service Connect (PSC) Deep Dive](#3-private-service-connect-psc-deep-dive)
+  - [3.1. Q: Is it necessary to enable Private Service Access (PSA) for Cloud SQL when connecting from Datastream using Private Service Connect (PSC)?](#31-q-is-it-necessary-to-enable-private-service-access-psa-for-cloud-sql-when-connecting-from-datastream-using-private-service-connect-psc)
+  - [3.2. Q: If Private Service Access (PSA) isn't needed for Datastream with PSC, can a user in the VPC also connect to Cloud SQL securely using only PSC, without PSA?](#32-q-if-private-service-access-psa-isnt-needed-for-datastream-with-psc-can-a-user-in-the-vpc-also-connect-to-cloud-sql-securely-using-only-psc-without-psa)
+  - [3.3. Q: If a PSC endpoint makes Cloud SQL accessible within the VPC, does that mean any resource in the VPC can connect automatically, or is a firewall rule still needed?](#33-q-if-a-psc-endpoint-makes-cloud-sql-accessible-within-the-vpc-does-that-mean-any-resource-in-the-vpc-can-connect-automatically-or-is-a-firewall-rule-still-needed)
+  - [3.4. Q: What is the `google_compute_forwarding_rule` resource created for PSC? Is it a load balancer or a VM?](#34-q-what-is-the-google_compute_forwarding_rule-resource-created-for-psc-is-it-a-load-balancer-or-a-vm)
+  - [3.5. Q: Can Cloud Run or App Engine also use Private Service Connect (PSC) to securely access Cloud SQL for MySQL?](#35-q-can-cloud-run-or-app-engine-also-use-private-service-connect-psc-to-securely-access-cloud-sql-for-mysql)
+- [4. Datastream & Operations](#4-datastream--operations)
+  - [4.1. Q: Is it mandatory to enable Private Service Connect (PSC) on a Cloud SQL for MySQL instance to connect to it from Datastream?](#41-q-is-it-mandatory-to-enable-private-service-connect-psc-on-a-cloud-sql-for-mysql-instance-to-connect-to-it-from-datastream)
+  - [4.2. Q: When using PSC to connect to Cloud SQL, should the Datastream Source Connection Profile use the Cloud SQL private IP or the static IP from the forwarding rule?](#42-q-when-using-psc-to-connect-to-cloud-sql-should-the-datastream-source-connection-profile-use-the-cloud-sql-private-ip-or-the-static-ip-from-the-forwarding-rule)
+  - [4.3. Q: What is the default value for `desired_state` in the `google_datastream_stream` resource?](#43-q-what-is-the-default-value-for-desired_state-in-the-google_datastream_stream-resource)
+  - [4.4. Q: Considering Datastreams configuration, how are multiple databases and tables stored in BigQuery?](#44-q-considering-datastreams-configuration-how-are-multiple-databases-and-tables-stored-in-bigquery)
+  - [4.5. Q: What is the `gcloud` command to start a Datastream Stream created by `terraform apply`?](#45-q-what-is-the-gcloud-command-to-start-a-datastream-stream-created-by-terraform-apply)
 
-## Setup & Operations
+## 1. General Concepts & Setup
 
-### 1. Q: Which GCP APIs need to be enabled before running `terraform apply`?
+### 1.1. Q: Which GCP APIs need to be enabled before running `terraform apply`?
 
-**A1:**
+**A:**
 
 Yes, certainly. Here is a step-by-step list of the APIs that need to be enabled in your GCP project before you run `terraform apply`.
 
@@ -83,166 +83,54 @@ Running this command first will ensure a smooth resource creation process withou
 
 ---
 
-### 2. Q: What is the `gcloud` command to start a Datastream Stream created by `terraform apply`?
+### 1.2. Q: What is the relationship between VPC Peering and GCP managed services like Cloud SQL or Vertex AI?
 
-**A2:**
+**A:**
 
-The `gcloud` command to start a Datastream Stream that was created in a `NOT_STARTED` state by `terraform apply` is as follows.
+The short answer is that you **do not use standard VPC Peering** to connect to Google-managed services like Cloud SQL or Vertex AI. Instead, you use a specialized mechanism called **Private Service Access (PSA)**, which is *built on top of* VPC Peering technology. For modern use cases, an alternative called **Private Service Connect (PSC)** is often preferred.
 
-#### Basic Command
+#### 1. The Problem: Where Do Managed Services Live?
 
-```bash
-gcloud datastream streams update [STREAM_NAME] \
-    --location=[REGION] \
-    --state=RUNNING
-```
+Google's managed services (PaaS/SaaS) do not run inside your VPC. They run in a separate, Google-owned VPC. The challenge is to connect your VPC to this service VPC privately and securely.
 
-*   **`[STREAM_NAME]`**: The name of the Datastream Stream you want to start. (Terraform variable: `var.stream_name`)
-*   **`[REGION]`**: The GCP region where the Stream was created. (Terraform variable: `var.region`)
-*   **`--state=RUNNING`**: The key part that sets the target state of the Stream to 'running'.
+#### 2. Solution 1: Private Service Access (PSA) - The Peering-Based Method
 
-#### Example
+PSA establishes a **private, dedicated VPC Peering connection** between your VPC and the Google service's VPC.
 
-If your Stream is named `mysql-to-bigquery-stream` and is in the `us-central1` region, you would run:
+*   **How it Works**:
+    1.  You reserve an IP range in your VPC for Google services.
+    2.  When you enable PSA, Google automatically creates a VPC Peering connection in the background.
+    3.  Google assigns internal IPs from your reserved range to its managed services (e.g., your Cloud SQL instance).
+*   **Result**: Your VMs can access the Cloud SQL instance using its new internal IP, and all traffic stays within Google's network.
+*   **Key Takeaway**: You don't create the peering yourself; you enable PSA, and Google manages the peering for you.
 
-```bash
-gcloud datastream streams update mysql-to-bigquery-stream \
-    --location=us-central1 \
-    --state=RUNNING
-```
+#### 3. Solution 2: Private Service Connect (PSC) - The Modern Endpoint-Based Method
 
-#### Additional Option: `--force`
+PSC is a newer, more flexible technology that does **not** use VPC Peering. Instead, it exposes the Google-managed service as a **private endpoint** directly inside your own VPC.
 
-If you want to forcibly start the stream even if there are validation warnings, you can add the `--force` flag. However, you should only use this if you fully understand the content of the warnings.
+*   **How it Works**:
+    1.  You create a PSC endpoint in your VPC.
+    2.  This endpoint gets a **single internal IP address** from your VPC's own subnet.
+    3.  This endpoint acts as a proxy, forwarding all traffic sent to it directly to the Google service.
+*   **Advantages over PSA**:
+    *   **No IP Overlap Issues**: Since it doesn't peer entire networks, there's no risk of IP address conflicts.
+    *   **Simplified IP Management**: You only manage a single endpoint IP, not an entire reserved range.
+    *   **More Secure**: It provides a one-way, inbound connection from your VPC to the service, preventing the service from initiating connections back into your network.
 
----
+#### Comparison Summary
 
-## Terraform & Resource Management
-
-### 3. Q: When configuring Datastream and Cloud SQL replication, which resources should be created only once per project and shared?
-
-**A3:**
-
-Yes, based on the provided Terraform code, here is a summary of the resources that should be **created only once per GCP project and then shared**.
-
-These resources typically act as a "connection" or "configuration" between specific networks or services, and multiple data pipelines or instances will use this shared infrastructure.
-
-#### List and Description of Shared Resources
-
-##### 1. `google_service_networking_connection`
-
-*   **Resource Name**: `private_vpc_connection`
-*   **Role**: Creates a **VPC Network Peering** that connects your VPC with the VPC of Google-managed services (like Cloud SQL).
-*   **Reason for Sharing**: This connection can **only exist once per VPC network**. Once created, all resources within that VPC use this single connection to privately access services like Cloud SQL. Even if you create multiple Cloud SQL instances, this one connection is used.
-*   **Analogy**: It's like a **single, dedicated private bridge** connecting 'your city (your VPC)' to the 'Google services city'.
-
-##### 2. `google_compute_global_address`
-
-*   **Resource Name**: `private_ip_address`
-*   **Role**: **Reserves a private IP address range** that will be allocated to Cloud SQL instances through the 'Service Networking connection' described above.
-*   **Reason for Sharing**: Since the `google_service_networking_connection` exists only once per VPC, the task of reserving an IP range for this connection must also be managed centrally. If multiple pipelines tried to add different IP ranges to this connection, conflicts could arise. Therefore, this resource is typically **created once for a single `google_service_networking_connection`**, and if multiple Cloud SQL instances are needed, they are configured to receive IPs from within this reserved range.
-    *   *(Advanced: While you can have multiple reserved ranges, for management purposes, it's best to manage them with a single, central Terraform configuration.)*
-
-##### 3. `google_compute_network_attachment`
-
-*   **Resource Name**: `ds_to_sql_attachment`
-*   **Role**: Creates a **'network connection point'** via PSC (Private Service Connect) to allow external services like Datastream to enter your VPC.
-*   **Reason for Sharing**: This resource is sufficient to have **once per combination of VPC network and region**. Once created, all PSC-based services (like Datastream, Vertex AI, etc.) entering that VPC and region will share this single connection point.
-*   **Analogy**: It's like a **'dedicated entrance for Google services'** built into 'your company building (your VPC)'.
-
-##### 4. `google_compute_subnetwork` (for PSC)
-
-*   **Resource Name**: `datastream_psc_subnet`
-*   **Role**: Creates a **dedicated subnet** for the `google_compute_network_attachment` to use.
-*   **Reason for Sharing**: Since the Network Attachment is a shared resource, the subnet it uses is also shared. This subnet serves as a dedicated space for PSC connections and isolates them from other VMs or services.
-
-#### Summary Table
-
-| Resource Type | Terraform Resource Name | Scope | Why It Should Be Shared |
+| Feature | Standard VPC Peering | Private Service Access (PSA) | Private Service Connect (PSC) |
 | :--- | :--- | :--- | :--- |
-| `google_service_networking_connection` | `private_vpc_connection` | VPC Network | Can only be created once per VPC. A single gateway for all private service access. |
-| `google_compute_global_address` | `private_ip_address` | Service Networking Connection | IP reservations for the above connection must be managed centrally to avoid conflicts. |
-| `google_compute_network_attachment` | `ds_to_sql_attachment` | VPC Network + Region | A single entry point shared by all PSC services entering the VPC/region. |
-| `google_compute_subnetwork` | `datastream_psc_subnet` | Network Attachment | As the dedicated subnet for the Network Attachment, it is shared along with it. |
+| **Primary Use Case** | Connecting two of your own VPCs | **Connecting your VPC to a Google Service VPC** | **Exposing a Google Service as an endpoint in your VPC** |
+| **Underlying Tech** | Peering | **VPC Peering** | Endpoint (Forwarding Rule) |
+| **IP Management** | Manual, risk of overlap | Reserve an IP range | **Uses a single IP from your subnet** |
+| **Recommendation** | For user-managed VPCs | For legacy or specific scenarios | **Generally recommended for new projects** |
 
 ---
 
-### 4. Q: If I have already created a `google_service_networking_connection` for another Cloud SQL instance (A), can I not create it again for a new instance (B)?
+### 1.3. Q: What GCP resource does the `google_service_networking_connection` Terraform resource block create?
 
-**A4:**
-
-That's correct. **You cannot create it again, and you don't need to.**
-
-The `google_service_networking_connection` is like a "dedicated bridge" that **exists only once per VPC**. Once this bridge is built, all services belonging to that VPC share it.
-
-#### Key Concept: One Bridge, Multiple Plots of Land
-
-*   **`google_service_networking_connection` (The Dedicated Bridge)**: This resource is a single connection between one VPC and Google's services. If you've already created it for instance A, all Google services will continue to use that bridge.
-*   **`google_compute_global_address` (IP Address Range, i.e., The Plot of Land)**: When you create a new Cloud SQL instance B, you reuse the existing "bridge" and simply **reserve a new "plot of land" (private IP address range)** on the other side.
-
-#### Conclusion
-
-In a single VPC, you create the `google_service_networking_connection` resource only once. When adding new Cloud SQL instances later, you only need to add a new `reserved_peering_ranges` to that existing connection. Therefore, it is correct that you "cannot create it again," and if it already exists, you must reuse it.
-
----
-
-### 5. Q: When connecting Datastream and Cloud SQL via PSC, should a Network Attachment be created for each Cloud SQL instance, or just once?
-
-**A5:**
-
-The short answer is: **you only need to create the Network Attachment once.**
-
-It is not necessary to create one for each Cloud SQL instance you want to connect to.
-
-#### Why Only Once? (An Analogy)
-
-You can think of the Network Attachment's role as a **'dedicated entrance for Google services'**.
-
-*   **Your VPC Network**: This is your 'company building', isolated from the outside.
-*   **Network Attachment**: This is the **'dedicated entrance for Google services'** built into your 'company building'. This entrance is the official pathway for all Google services that support PSC, like Datastream and Vertex AI, to enter your building.
-*   **Cloud SQL Instances (A, B, C...)**: These are the 'partner offices' outside your building that need to collaborate with you.
-
-Just as you wouldn't build a new entrance to your company building every time a new partner company comes along, the same principle applies here.
-
-#### Technical Explanation
-
-*   **Scope of a Network Attachment**: The `google_compute_network_attachment` resource is not tied to a specific Cloud SQL instance but to a **VPC network** and a **region**.
-*   **Connection Flow**: A service like Datastream enters the consumer's VPC through this Network Attachment and is then routed through the PSC infrastructure to the specific target Cloud SQL instance.
-
-#### Conclusion
-
-For a **single VPC network** and **single region** combination, **one Network Attachment** is sufficient. If you want to connect to multiple Cloud SQL instances within that VPC/region, all connections will share the one Network Attachment you have already created.
-
----
-
-### 6. Q: What problems can occur if I create multiple Network Attachments?
-
-**A6:**
-
-While it might technically work, creating multiple Network Attachments can lead to several management, cost, and potential performance issues.
-
-1.  **Unnecessary Costs**: A Network Attachment is a resource that is billed hourly. If you create multiple, you will be paying for unused Attachments.
-
-2.  **Increased Management Complexity (The Biggest Problem)**:
-    *   **Confusing Architecture**: It creates confusion like, "Which service is using which Attachment?", making it difficult to diagnose issues during an outage.
-    *   **Terraform Code Duplication**: Having multiple, nearly identical resource blocks clutters the code, harms readability, and makes maintenance difficult.
-    *   **Complex Firewall Rules**: You would need to manage separate subnets and firewall rules for each Attachment, complicating security policies and increasing the chance of mistakes.
-
-3.  **Resource Quota Issues**: All GCP resources are subject to quotas. Creating unnecessary Attachments might prevent you from creating one when you actually need it later.
-
-4.  **Potential Performance and Routing Issues**: An unnecessarily complex network configuration can create inefficient traffic paths, potentially leading to minor increases in latency. It also makes debugging much more complicated when problems arise.
-
-#### Conclusion
-
-Creating multiple Network Attachments is like **unnecessarily building multiple front doors in a single building that all lead to the same place**. Adhering to the **"1 VPC, 1 Region, 1 Network Attachment"** principle is the most efficient and correct architectural design in terms of cost, management, and performance.
-
----
-
-## Networking
-
-### 7. Q: What GCP resource does the `google_service_networking_connection` Terraform resource block create?
-
-**A7:**
+**A:**
 
 The `google_service_networking_connection` resource is responsible for creating a **private communication channel** between **your VPC network** and the **VPC network of Google-managed services** (e.g., Cloud SQL).
 
@@ -263,7 +151,6 @@ Without this bridge, services in 'your city' would have to use the public intern
 Let's look at how the code block in `main.tf` creates this 'dedicated bridge'.
 
 ```terraform
-
 resource "google_service_networking_connection" "private_vpc_connection" {
   network                 = data.google_compute_network.main_vpc.id
   service                 = "servicenetworking.googleapis.com"
@@ -285,9 +172,9 @@ In conclusion, this resource is an essential "network bridge" for integrating yo
 
 ---
 
-### 8. Q: Where can I verify the VPC Peering for a private Cloud SQL connection?
+### 1.4. Q: Where can I verify the VPC Peering for a private Cloud SQL connection?
 
-**A8:**
+**A:**
 
 That's an excellent question. The VPC Peering used for Cloud SQL's private IP connection is managed slightly differently from standard VPC Peering, and the location to verify it is specific.
 
@@ -351,9 +238,176 @@ If the `servicenetworking-googleapis-com` peering appears with an `ACTIVE` state
 
 ---
 
-### 9. Q: Is it necessary to enable Private Service Access (PSA) for Cloud SQL when connecting from Datastream using Private Service Connect (PSC)?
+### 1.5. Q: How do firewall rules work in a private connectivity environment (PSA vs. PSC)?
 
-**A9:**
+**A:**
+
+This is a critical security question. Firewall rules are configured differently for Private Service Access (PSA) and Private Service Connect (PSC) because their underlying network models are different.
+
+The most important principle is that **VPC firewall rules always control traffic entering or leaving *your* VPC**. You cannot create rules inside the Google-managed service's VPC.
+
+#### 1. Firewall Rules with Private Service Access (PSA)
+
+Since PSA is based on VPC Peering, you are controlling traffic between two networks. To allow a VM in your VPC to connect to a Cloud SQL instance, you need an **Egress (outbound) firewall rule**.
+
+*   **Direction**: `Egress`
+*   **Source**: The VM(s) that need to connect (best specified by a **network tag**, e.g., `database-client`).
+*   **Destination**: The **reserved IP range** you allocated for PSA (e.g., `192.168.10.0/24`). You must target the entire range.
+*   **Protocols / Ports**: The specific port for your database (e.g., `tcp:3306` for MySQL).
+
+This rule says: "Allow traffic *leaving* our VPC, *from* our client VMs, *to* the IP range where our Cloud SQL instance lives."
+
+#### 2. Firewall Rules with Private Service Connect (PSC)
+
+PSC exposes the service as an endpoint *inside* your VPC. Think of this endpoint as another VM with an IP address. This gives you more intuitive control. You need an **Ingress (inbound) firewall rule** to allow traffic *to* the endpoint.
+
+*   **Direction**: `Ingress`
+*   **Source**: The VM(s) that need to connect (again, best specified by a **network tag**).
+*   **Destination**: The PSC endpoint itself. You can target it by its **network tag** or, more specifically, by its **single internal IP address** (e.g., `10.10.0.5/32`).
+*   **Protocols / Ports**: The specific service port (e.g., `tcp:3306`).
+
+This rule says: "Allow traffic *coming into* our PSC endpoint, *from* our client VMs."
+
+#### Comparison Summary
+
+| Feature | Private Service Access (PSA) | Private Service Connect (PSC) |
+| :--- | :--- | :--- |
+| **Primary Rule Type** | **Egress** (from client to service) | **Ingress** (to the endpoint) |
+| **Rule Destination** | The entire **reserved IP range** | The **single IP address** or **tag** of the endpoint |
+| **Analogy** | Guarding the bridge out of your city | Guarding the front door of a specific office in your city |
+| **Security Model** | Controls traffic between two networks | Treats the service endpoint like any other resource within your network |
+| **Directionality** | Can be configured for bidirectional traffic | Strictly unidirectional (your VPC initiates connection to the service) |
+
+Using PSC with Ingress rules is generally considered more secure and easier to manage because it aligns with the standard practice of controlling access to specific resources within your VPC, rather than managing traffic flows to an external network.
+
+---
+
+## 2. Terraform & Resource Management
+
+### 2.1. Q: When configuring Datastream and Cloud SQL replication, which resources should be created only once per project and shared?
+
+**A:**
+
+Yes, based on the provided Terraform code, here is a summary of the resources that should be **created only once per GCP project and then shared**.
+
+These resources typically act as a "connection" or "configuration" between specific networks or services, and multiple data pipelines or instances will use this shared infrastructure.
+
+#### List and Description of Shared Resources
+
+##### 1. `google_service_networking_connection`
+
+*   **Resource Name**: `private_vpc_connection`
+*   **Role**: Creates a **VPC Network Peering** that connects your VPC with the VPC of Google-managed services (like Cloud SQL).
+*   **Reason for Sharing**: This connection can **only exist once per VPC network**. Once created, all resources within that VPC use this single connection to privately access services like Cloud SQL. Even if you create multiple Cloud SQL instances, this one connection is used.
+*   **Analogy**: It's like a **single, dedicated private bridge** connecting 'your city (your VPC)' to the 'Google services city'.
+
+##### 2. `google_compute_global_address`
+
+*   **Resource Name**: `private_ip_address`
+*   **Role**: **Reserves a private IP address range** that will be allocated to Cloud SQL instances through the 'Service Networking connection' described above.
+*   **Reason for Sharing**: Since the `google_service_networking_connection` exists only once per VPC, the task of reserving an IP range for this connection must also be managed centrally. If multiple pipelines tried to add different IP ranges to this connection, conflicts could arise. Therefore, this resource is typically **created once for a single `google_service_networking_connection`**, and if multiple Cloud SQL instances are needed, they are configured to receive IPs from within this reserved range.
+    *   *(Advanced: While you can have multiple reserved ranges, for management purposes, it's best to manage them with a single, central Terraform configuration.)*
+
+##### 3. `google_compute_network_attachment`
+
+*   **Resource Name**: `ds_to_sql_attachment`
+*   **Role**: Creates a **'network connection point'** via PSC (Private Service Connect) to allow external services like Datastream to enter your VPC.
+*   **Reason for Sharing**: This resource is sufficient to have **once per combination of VPC network and region**. Once created, all PSC-based services (like Datastream, Vertex AI, etc.) entering that VPC and region will share this single connection point.
+*   **Analogy**: It's like a **'dedicated entrance for Google services'** built into 'your company building (your VPC)'.
+
+##### 4. `google_compute_subnetwork` (for PSC)
+
+*   **Resource Name**: `datastream_psc_subnet`
+*   **Role**: Creates a **dedicated subnet** for the `google_compute_network_attachment` to use.
+*   **Reason for Sharing**: Since the Network Attachment is a shared resource, the subnet it uses is also shared. This subnet serves as a dedicated space for PSC connections and isolates them from other VMs or services.
+
+#### Summary Table
+
+| Resource Type | Terraform Resource Name | Scope | Why It Should Be Shared |
+| :--- | :--- | :--- | :--- |
+| `google_service_networking_connection` | `private_vpc_connection` | VPC Network | Can only be created once per VPC. A single gateway for all private service access. |
+| `google_compute_global_address` | `private_ip_address` | Service Networking Connection | IP reservations for the above connection must be managed centrally to avoid conflicts. |
+| `google_compute_network_attachment` | `ds_to_sql_attachment` | VPC Network + Region | A single entry point shared by all PSC services entering the VPC/region. |
+| `google_compute_subnetwork` | `datastream_psc_subnet` | Network Attachment | As the dedicated subnet for the Network Attachment, it is shared along with it. |
+
+---
+
+### 2.2. Q: If I have already created a `google_service_networking_connection` for another Cloud SQL instance (A), can I not create it again for a new instance (B)?
+
+**A:**
+
+That's correct. **You cannot create it again, and you don't need to.**
+
+The `google_service_networking_connection` is like a "dedicated bridge" that **exists only once per VPC**. Once this bridge is built, all services belonging to that VPC share it.
+
+#### Key Concept: One Bridge, Multiple Plots of Land
+
+*   **`google_service_networking_connection` (The Dedicated Bridge)**: This resource is a single connection between one VPC and Google's services. If you've already created it for instance A, all Google services will continue to use that bridge.
+*   **`google_compute_global_address` (IP Address Range, i.e., The Plot of Land)**: When you create a new Cloud SQL instance B, you reuse the existing "bridge" and simply **reserve a new "plot of land" (private IP address range)** on the other side.
+
+#### Conclusion
+
+In a single VPC, you create the `google_service_networking_connection` resource only once. When adding new Cloud SQL instances later, you only need to add a new `reserved_peering_ranges` to that existing connection. Therefore, it is correct that you "cannot create it again," and if it already exists, you must reuse it.
+
+---
+
+### 2.3. Q: When connecting Datastream and Cloud SQL via PSC, should a Network Attachment be created for each Cloud SQL instance, or just once?
+
+**A:**
+
+The short answer is: **you only need to create the Network Attachment once.**
+
+It is not necessary to create one for each Cloud SQL instance you want to connect to.
+
+#### Why Only Once? (An Analogy)
+
+You can think of the Network Attachment's role as a **'dedicated entrance for Google services'**.
+
+*   **Your VPC Network**: This is your 'company building', isolated from the outside.
+*   **Network Attachment**: This is the **'dedicated entrance for Google services'** built into your 'company building'. This entrance is the official pathway for all Google services that support PSC, like Datastream and Vertex AI, to enter your building.
+*   **Cloud SQL Instances (A, B, C...)**: These are the 'partner offices' outside your building that need to collaborate with you.
+
+Just as you wouldn't build a new entrance to your company building every time a new partner company comes along, the same principle applies here.
+
+#### Technical Explanation
+
+*   **Scope of a Network Attachment**: The `google_compute_network_attachment` resource is not tied to a specific Cloud SQL instance but to a **VPC network** and a **region**.
+*   **Connection Flow**: A service like Datastream enters the consumer's VPC through this Network Attachment and is then routed through the PSC infrastructure to the specific target Cloud SQL instance.
+
+#### Conclusion
+
+For a **single VPC network** and **single region** combination, **one Network Attachment** is sufficient. If you want to connect to multiple Cloud SQL instances within that VPC/region, all connections will share the one Network Attachment you have already created.
+
+---
+
+### 2.4. Q: What problems can occur if I create multiple Network Attachments?
+
+**A:**
+
+While it might technically work, creating multiple Network Attachments can lead to several management, cost, and potential performance issues.
+
+1.  **Unnecessary Costs**: A Network Attachment is a resource that is billed hourly. If you create multiple, you will be paying for unused Attachments.
+
+2.  **Increased Management Complexity (The Biggest Problem)**:
+    *   **Confusing Architecture**: It creates confusion like, "Which service is using which Attachment?", making it difficult to diagnose issues during an outage.
+    *   **Terraform Code Duplication**: Having multiple, nearly identical resource blocks clutters the code, harms readability, and makes maintenance difficult.
+    *   **Complex Firewall Rules**: You would need to manage separate subnets and firewall rules for each Attachment, complicating security policies and increasing the chance of mistakes.
+
+3.  **Resource Quota Issues**: All GCP resources are subject to quotas. Creating unnecessary Attachments might prevent you from creating one when you actually need it later.
+
+4.  **Potential Performance and Routing Issues**: An unnecessarily complex network configuration can create inefficient traffic paths, potentially leading to minor increases in latency. It also makes debugging much more complicated when problems arise.
+
+#### Conclusion
+
+Creating multiple Network Attachments is like **unnecessarily building multiple front doors in a single building that all lead to the same place**. Adhering to the **"1 VPC, 1 Region, 1 Network Attachment"** principle is the most efficient and correct architectural design in terms of cost, management, and performance.
+
+---
+
+## 3. Private Service Connect (PSC) Deep Dive
+
+### 3.1. Q: Is it necessary to enable Private Service Access (PSA) for Cloud SQL when connecting from Datastream using Private Service Connect (PSC)?
+
+**A:**
 
 No, it is **not necessary to enable Private Service Access (PSA)**.
 
@@ -373,9 +427,9 @@ Understanding the difference between these two technologies is key. Both provide
 
 #### Why Datastream Doesn't Need PSA
 
-1.  **Datastream is a Service Consumer:** Datastream needs to connect to a specific published service (Cloud SQL). PSC is designed precisely for this service-centric connection model.
+1.  **Datastream is a Service Consumer**: Datastream needs to connect to a specific published service (Cloud SQL). PSC is designed precisely for this service-centric connection model.
 
-2.  **PSC's Connection Method:**
+2.  **PSC's Connection Method**:
     *   The Cloud SQL instance acts as a "published service."
     *   Datastream accesses this published service through a **Network Attachment** created in your VPC.
     *   This process establishes a private path to the service itself, independent of the VPC-wide peering created by PSA. Therefore, building the PSA "bridge" is not required for this scenario.
@@ -389,9 +443,9 @@ Understanding the difference between these two technologies is key. Both provide
 
 ---
 
-### 10. Q: If Private Service Access (PSA) isn't needed for Datastream with PSC, can a user in the VPC also connect to Cloud SQL securely using only PSC, without PSA?
+### 3.2. Q: If Private Service Access (PSA) isn't needed for Datastream with PSC, can a user in the VPC also connect to Cloud SQL securely using only PSC, without PSA?
 
-**A10:**
+**A:**
 
 Yes, absolutely. When you need to securely access Cloud SQL for MySQL from within your VPC (e.g., from a GCE VM), you can **connect using only Private Service Connect (PSC) without needing Private Service Access (PSA)**. In fact, for modern architectures, this is often the recommended approach.
 
@@ -436,9 +490,12 @@ When private access from your VPC to Cloud SQL is needed, you have two valid opt
 2.  **Using PSC**: Create an endpoint (an internal IP) in your VPC that points to Cloud SQL (the modern method).
 
 Therefore, if Datastream uses PSC and your VPC also uses PSC to connect to Cloud SQL, **PSA is not needed at all**.
-### 11. Q: If a PSC endpoint makes Cloud SQL accessible within the VPC, does that mean any resource in the VPC can connect automatically, or is a firewall rule still needed?
 
-**A11:**
+---
+
+### 3.3. Q: If a PSC endpoint makes Cloud SQL accessible within the VPC, does that mean any resource in the VPC can connect automatically, or is a firewall rule still needed?
+
+**A:**
 
 That is an excellent and critical question. The short answer is: **No, resources cannot connect automatically. A firewall rule is absolutely necessary.**
 
@@ -485,9 +542,9 @@ Private Service Connect provides the **private network path**, but **VPC firewal
 
 ---
 
-### 12. Q: What is the `google_compute_forwarding_rule` resource created for PSC? Is it a load balancer or a VM?
+### 3.4. Q: What is the `google_compute_forwarding_rule` resource created for PSC? Is it a load balancer or a VM?
 
-**A12:**
+**A:**
 
 That's an excellent question, as the nature of this resource can be confusing.
 
@@ -543,15 +600,15 @@ Therefore, the `google_compute_forwarding_rule` we are creating is not a VM or a
 
 ---
 
-### 13. Q: Can Cloud Run or App Engine also use Private Service Connect (PSC) to securely access Cloud SQL for MySQL?
+### 3.5. Q: Can Cloud Run or App Engine also use Private Service Connect (PSC) to securely access Cloud SQL for MySQL?
 
-**A13:**
+**A:**
 
 Yes, absolutely. **Cloud Run and App Engine can use Private Service Connect (PSC) to securely and privately access Cloud SQL for MySQL.**
 
 However, the connection method is slightly different from a GCE VM and requires an additional component called the **Serverless VPC Access Connector**.
 
---- 
+---
 
 #### Detailed Explanation: How Serverless Environments Integrate with PSC
 
@@ -582,7 +639,7 @@ The App Engine Flexible environment is different. Its services run as GCE VM ins
 *   Since the App Engine Flex application already exists inside your VPC, **no VPC Access Connector is needed**.
 *   It can connect directly to the PSC endpoint's internal IP address, exactly like a standard GCE VM.
 
---- 
+---
 
 #### Architecture Comparison Summary
 
@@ -598,7 +655,6 @@ The App Engine Flexible environment is different. Its services run as GCE VM ins
 #### Why Use This Approach? (Advantages)
 
 *   **Consistent Network Policy**: All private traffic to Cloud SQL (from VMs, serverless, etc.) can be centralized through a single PSC endpoint, allowing for consistent firewall and network policy management.
-*   **Complete Privacy**: The Cloud SQL instance does not need a public IP address, and all traffic remains on Google's internal network, maximizing security.
 *   **Avoids PSA Complexity**: Since it doesn't use VPC Peering (PSA), there are no concerns about IP range conflicts or complex peering route management.
 
 #### Summary
@@ -607,7 +663,7 @@ Cloud Run and App Engine Standard can privately connect to Cloud SQL by first en
 
 This architecture is one of the standard methods for modern serverless applications to communicate securely and efficiently with Google Cloud's managed database services.
 
---- 
+---
 
 ### References
 
@@ -625,181 +681,45 @@ The official Google Cloud documentation supporting this answer includes:
     *   [https://cloud.google.com/sql/docs/mysql/connect-private-service-connect](https://cloud.google.com/sql/docs/mysql/connect-private-service-connect)
     *   Details the process of creating the PSC endpoint within the VPC, which is the target the serverless service will ultimately connect to.
 
---- 
+---
 
-### 18. Q: What is the relationship between VPC Peering and GCP managed services like Cloud SQL or Vertex AI?
+## 4. Datastream & Operations
 
-**A18:**
+### 4.1. Q: Is it mandatory to enable Private Service Connect (PSC) on a Cloud SQL for MySQL instance to connect to it from Datastream?
 
-The short answer is that you **do not use standard VPC Peering** to connect to Google-managed services like Cloud SQL or Vertex AI. Instead, you use a specialized mechanism called **Private Service Access (PSA)**, which is *built on top of* VPC Peering technology. For modern use cases, an alternative called **Private Service Connect (PSC)** is often preferred.
+**A:**
 
-#### 1. The Problem: Where Do Managed Services Live?
+Yes, that's correct. **To connect to a Cloud SQL for MySQL instance from Datastream using Private Service Connect (PSC), you must enable PSC on the target Cloud SQL instance.**
 
-Google's managed services (PaaS/SaaS) do not run inside your VPC. They run in a separate, Google-owned VPC. The challenge is to connect your VPC to this service VPC privately and securely.
+#### Why is this mandatory?
 
-#### 2. Solution 1: Private Service Access (PSA) - The Peering-Based Method
+Private Service Connect operates on a "producer" and "consumer" model.
 
-PSA establishes a **private, dedicated VPC Peering connection** between your VPC and the Google service's VPC.
+1.  **Service Producer**: This is the service being offered. In this scenario, **Cloud SQL for MySQL** is the producer. Enabling PSC on Cloud SQL creates a **Service Attachment**, which is an internal endpoint that exposes the service. This is equivalent to announcing, "Our service is ready to accept connections via PSC."
 
-*   **How it Works**:
-    1.  You reserve an IP range in your VPC for Google services.
-    2.  When you enable PSA, Google automatically creates a VPC Peering connection in the background.
-    3.  Google assigns internal IPs from your reserved range to its managed services (e.g., your Cloud SQL instance).
-*   **Result**: Your VMs can access the Cloud SQL instance using its new internal IP, and all traffic stays within Google's network.
-*   **Key Takeaway**: You don't create the peering yourself; you enable PSA, and Google manages the peering for you.
+2.  **Service Consumer**: This is the service that uses the published service. In this case, **Datastream** is the consumer. When you configure a Private Connection in Datastream to use PSC, it looks for the Service Attachment published by Cloud SQL to establish a private link.
 
-#### 3. Solution 2: Private Service Connect (PSC) - The Modern Endpoint-Based Method
+Therefore, if the Cloud SQL instance does not enable PSC to expose itself as a "service producer," Datastream will have no target to connect to, making a PSC connection impossible.
 
-PSC is a newer, more flexible technology that does **not** use VPC Peering. Instead, it exposes the Google-managed service as a **private endpoint** directly inside your own VPC.
+#### Official Documentation
 
-*   **How it Works**:
-    1.  You create a PSC endpoint in your VPC.
-    2.  This endpoint gets a **single internal IP address** from your VPC's own subnet.
-    3.  This endpoint acts as a proxy, forwarding all traffic sent to it directly to the Google service.
-*   **Advantages over PSA**:
-    *   **No IP Overlap Issues**: Since it doesn't peer entire networks, there's no risk of IP address range conflicts.
-    *   **Simplified IP Management**: You only manage a single endpoint IP, not an entire reserved range.
-    *   **More Secure**: It provides a one-way, inbound connection from your VPC to the service, preventing the service from initiating connections back into your network.
+This requirement is detailed in the official Google Cloud documentation:
 
-#### Comparison Summary
+1.  **About Private Service Connect for Cloud SQL**:
+    *   This document explains the concept of enabling PSC on Cloud SQL to publish the instance as a service.
+    *   **Link**: [https://cloud.google.com/sql/docs/mysql/private-service-connect](https://cloud.google.com/sql/docs/mysql/private-service-connect)
 
-| Feature | Standard VPC Peering | Private Service Access (PSA) | Private Service Connect (PSC) |
-| :--- | :--- | :--- | :--- |
-| **Primary Use Case** | Connecting two of your own VPCs | **Connecting your VPC to a Google Service VPC** | **Exposing a Google Service as an endpoint in your VPC** |
-| **Underlying Tech** | Peering | **VPC Peering** | Endpoint (Forwarding Rule) |
-| **IP Management** | Manual, risk of overlap | Reserve an IP range | **Uses a single IP from your subnet** |
-| **Recommendation** | For user-managed VPCs | For legacy or specific scenarios | **Generally recommended for new projects** |
+2.  **Configure a private connection for Datastream**:
+    *   This guide for setting up a private connection from Datastream to a source presupposes that the source (Cloud SQL) has already been exposed via PSC.
+    *   **Link**: [https://cloud.google.com/datastream/docs/configure-private-connectivity](https://cloud.google.com/datastream/docs/configure-private-connectivity)
+
+In short, for Datastream to "knock on the door" of Cloud SQL via PSC, Cloud SQL must first "open the door" by enabling PSC.
 
 ---
 
-### 19. Q: How do firewall rules work in a private connectivity environment (PSA vs. PSC)?
+### 4.2. Q: When using PSC to connect to Cloud SQL, should the Datastream Source Connection Profile use the Cloud SQL private IP or the static IP from the forwarding rule?
 
-**A19:**
-
-This is a critical security question. Firewall rules are configured differently for Private Service Access (PSA) and Private Service Connect (PSC) because their underlying network models are different.
-
-The most important principle is that **VPC firewall rules always control traffic entering or leaving *your* VPC**. You cannot create rules inside the Google-managed service's VPC.
-
-#### 1. Firewall Rules with Private Service Access (PSA)
-
-Since PSA is based on VPC Peering, you are controlling traffic between two networks. To allow a VM in your VPC to connect to a Cloud SQL instance, you need an **Egress (outbound) firewall rule**.
-
-*   **Direction**: `Egress`
-*   **Source**: The VM(s) that need to connect (best specified by a **network tag**, e.g., `database-client`).
-*   **Destination**: The **reserved IP range** you allocated for PSA (e.g., `192.168.10.0/24`). You must target the entire range.
-*   **Protocols / Ports**: The specific port for your database (e.g., `tcp:3306` for MySQL).
-
-This rule says: "Allow traffic *leaving* our VPC, *from* our client VMs, *to* the IP range where our Cloud SQL instance lives."
-
-#### 2. Firewall Rules with Private Service Connect (PSC)
-
-PSC exposes the service as an endpoint *inside* your VPC. Think of this endpoint as another VM with an IP address. This gives you more intuitive control. You need an **Ingress (inbound) firewall rule** to allow traffic *to* the endpoint.
-
-*   **Direction**: `Ingress`
-*   **Source**: The VM(s) that need to connect (again, best specified by a **network tag**).
-*   **Destination**: The PSC endpoint itself. You can target it by its **network tag** or, more specifically, by its **single internal IP address** (e.g., `10.10.0.5/32`).
-*   **Protocols / Ports**: The specific service port (e.g., `tcp:3306`).
-
-This rule says: "Allow traffic *coming into* our PSC endpoint, *from* our client VMs."
-
-#### Comparison Summary
-
-| Feature | Private Service Access (PSA) | Private Service Connect (PSC) |
-| :--- | :--- | :--- |
-| **Primary Rule Type** | **Egress** (from client to service) | **Ingress** (to the endpoint) |
-| **Rule Destination** | The entire **reserved IP range** | The **single IP address** or **tag** of the endpoint |
-| **Analogy** | Guarding the bridge out of your city | Guarding the front door of a specific office in your city |
-| **Security Model** | Controls traffic between two networks | Treats the service endpoint like any other resource within your network |
-| **Directionality** | Can be configured for bidirectional traffic | Strictly unidirectional (your VPC initiates connection to the service) |
-
-Using PSC with Ingress rules is generally considered more secure and easier to manage because it aligns with the standard practice of controlling access to specific resources within your VPC, rather than managing traffic flows to an external network.
-
----
-
-## Datastream
-
-### 14. Q: What is the default value for `desired_state` in the `google_datastream_stream` resource?
-
-**A14:**
-
-According to the official Terraform documentation, the `desired_state` argument has **no explicit default value**.
-
-However, if you **omit** this argument from your code, Terraform will not pass a `desired_state` value to the GCP API. In this case, following the default behavior of the GCP Datastream API, the Stream will be created in the **`NOT_STARTED`** state.
-
-#### Behavior Summary by Scenario
-
-| `desired_state` Setting | Terraform Action | Final Stream State | Description |
-| :--- | :--- | :--- | :--- |
-| **Argument Omitted** | Does not include the `desired_state` field in the API call | **`NOT_STARTED`** | **(GCP API Default Behavior)** The resource is created, but data replication has not begun. |
-| `desired_state = "RUNNING"` | Sets `desired_state` to "RUNNING" in the API call | `RUNNING` | Immediately starts the stream to begin data replication after resource creation. |
-| `desired_state = "PAUSED"` | Sets `desired_state` to "PAUSED" in the API call | `PAUSED` | Immediately places the stream in a paused state after resource creation. |
-
-Therefore, if you omit the `desired_state` line from your code, the Stream will be safely created in a `NOT_STARTED` state, allowing you to start it manually later.
-
----
-
-### 15. Q: Considering Datastream's configuration, how are multiple databases and tables stored in BigQuery?
-
-**A15:**
-
-Datastream preserves the **hierarchy** of the source (MySQL) in the destination (BigQuery).
-
-*   **MySQL Hierarchy**: `Database (Schema) → Table`
-*   **BigQuery Hierarchy**: `Project → Dataset → Table`
-
-Datastream maps a MySQL `database` to a BigQuery `dataset` and a MySQL `table` to a BigQuery `table`, thus preserving this structure.
-
-#### Storage Method: The `source_hierarchy_datasets` Setting
-
-This behavior is controlled by the **`source_hierarchy_datasets`** setting within the `bigquery_destination_config` block of the `google_datastream_stream` resource.
-
-```terraform
-
-
-destination_config {
-  bigquery_destination_config {
-    source_hierarchy_datasets {
-      dataset_template {
-        location = var.bigquery_dataset_location
-        dataset_id_prefix = "my_cdc_data" // Example prefix
-      }
-    }
-  }
-}
-```
-
-#### Specific Storage Example
-
-If your source MySQL has `sales_db` and `inventory_db` databases, the following datasets and tables will be created in BigQuery:
-
-*   **`my_cdc_data_sales_db`** (Dataset)
-    *   `customers` (Table)
-    *   `orders` (Table)
-*   **`my_cdc_data_inventory_db`** (Dataset)
-    *   `products` (Table)
-
-**Summary Rule:**
-> BigQuery Dataset Name = **`[dataset_id_prefix]_[source_database_name]`**
-
-This method ensures that the logical separation of the source is maintained in BigQuery, making it very easy to identify and manage the data.
-
-#### Additional Metadata in BigQuery Tables
-
-Each table created in BigQuery includes all the columns from the source table, plus useful **metadata columns** added by Datastream.
-
-| Metadata Column | Description |
-| :--- | :--- |
-| `datastream_metadata.uuid` | A unique identifier for each row. |
-| `datastream_metadata.source_timestamp` | The actual time the change occurred at the source. |
-| `datastream_metadata.is_deleted` | A `BOOLEAN` value indicating whether the row was `DELETE`d at the source (Soft-delete). |
-
-This metadata enables sophisticated, time-based data analysis.
-
----
-
-### 16. Q: When using PSC to connect to Cloud SQL, should the Datastream Source Connection Profile use the Cloud SQL private IP or the static IP from the forwarding rule?
-
-**A16:**
+**A:**
 
 That's an excellent question that gets to the core of the PSC architecture. It's an easy point of confusion, but the two connection paths are distinctly different.
 
@@ -869,32 +789,111 @@ The official Google Cloud documentation that supports this distinction is as fol
 
 ---
 
-### 17. Q: Is it mandatory to enable Private Service Connect (PSC) on a Cloud SQL for MySQL instance to connect to it from Datastream?
+### 4.3. Q: What is the default value for `desired_state` in the `google_datastream_stream` resource?
 
-**A17:**
+**A:**
 
-Yes, that's correct. **To connect to a Cloud SQL for MySQL instance from Datastream using Private Service Connect (PSC), you must enable PSC on the target Cloud SQL instance.**
+According to the official Terraform documentation, the `desired_state` argument has **no explicit default value**.
 
-#### Why is this mandatory?
+However, if you **omit** this argument from your code, Terraform will not pass a `desired_state` value to the GCP API. In this case, following the default behavior of the GCP Datastream API, the Stream will be created in the **`NOT_STARTED`** state.
 
-Private Service Connect operates on a "producer" and "consumer" model.
+#### Behavior Summary by Scenario
 
-1.  **Service Producer**: This is the service being offered. In this scenario, **Cloud SQL for MySQL** is the producer. Enabling PSC on Cloud SQL creates a **Service Attachment**, which is an internal endpoint that exposes the service. This is equivalent to announcing, "Our service is ready to accept connections via PSC."
+| `desired_state` Setting | Terraform Action | Final Stream State |
+| :--- | :--- | :--- |
+| **Argument Omitted** | Does not include the `desired_state` field in the API call | **`NOT_STARTED`** |
+| `desired_state = "RUNNING"` | Sets `desired_state` to "RUNNING" in the API call | `RUNNING` |
+| `desired_state = "PAUSED"` | Sets `desired_state` to "PAUSED" in the API call | `PAUSED` |
 
-2.  **Service Consumer**: This is the service that uses the published service. In this case, **Datastream** is the consumer. When you configure a Private Connection in Datastream to use PSC, it looks for the Service Attachment published by Cloud SQL to establish a private link.
+Therefore, if you omit the `desired_state` line from your code, the Stream will be safely created in a `NOT_STARTED` state, allowing you to start it manually later.
 
-Therefore, if the Cloud SQL instance does not enable PSC to expose itself as a "service producer," Datastream will have no target to connect to, making a PSC connection impossible.
+---
 
-#### Official Documentation
+### 4.4. Q: Considering Datastreams configuration, how are multiple databases and tables stored in BigQuery?
 
-This requirement is detailed in the official Google Cloud documentation:
+**A:**
 
-1.  **About Private Service Connect for Cloud SQL**:
-    *   This document explains the concept of enabling PSC on Cloud SQL to publish the instance as a service.
-    *   **Link**: [https://cloud.google.com/sql/docs/mysql/private-service-connect](https://cloud.google.com/sql/docs/mysql/private-service-connect)
+Datastream preserves the **hierarchy** of the source (MySQL) in the destination (BigQuery).
 
-2.  **Configure a private connection for Datastream**:
-    *   This guide for setting up a private connection from Datastream to a source presupposes that the source (Cloud SQL) has already been exposed via PSC.
-    *   **Link**: [https://cloud.google.com/datastream/docs/configure-private-connectivity](https://cloud.google.com/datastream/docs/configure-private-connectivity)
+*   **MySQL Hierarchy**: `Database (Schema) → Table`
+*   **BigQuery Hierarchy**: `Project → Dataset → Table`
 
-In short, for Datastream to "knock on the door" of Cloud SQL via PSC, Cloud SQL must first "open the door" by enabling PSC.
+Datastream maps a MySQL `database` to a BigQuery `dataset` and a MySQL `table` to a BigQuery `table`, thus preserving this structure.
+
+#### Storage Method: The `source_hierarchy_datasets` Setting
+
+This behavior is controlled by the **`source_hierarchy_datasets`** setting within the `bigquery_destination_config` block of the `google_datastream_stream` resource.
+
+```terraform
+destination_config {
+  bigquery_destination_config {
+    source_hierarchy_datasets {
+      dataset_template {
+        location = var.bigquery_dataset_location
+        dataset_id_prefix = "my_cdc_data" // Example prefix
+      }
+    }
+  }
+}
+```
+
+#### Specific Storage Example
+
+If your source MySQL has `sales_db` and `inventory_db` databases, the following datasets and tables will be created in BigQuery:
+
+*   **`my_cdc_data_sales_db`** (Dataset)
+    *   `customers` (Table)
+    *   `orders` (Table)
+*   **`my_cdc_data_inventory_db`** (Dataset)
+    *   `products` (Table)
+
+**Summary Rule:**
+> BigQuery Dataset Name = **`[dataset_id_prefix]_[source_database_name]`**
+
+This method ensures that the logical separation of the source is maintained in BigQuery, making it very easy to identify and manage the data.
+
+#### Additional Metadata in BigQuery Tables
+
+Each table created in BigQuery includes all the columns from the source table, plus useful **metadata columns** added by Datastream.
+
+| Metadata Column | Description |
+| :--- | :--- |
+| `datastream_metadata.uuid` | A unique identifier for each row. |
+| `datastream_metadata.source_timestamp` | The actual time the change occurred at the source. |
+| `datastream_metadata.is_deleted` | A `BOOLEAN` value indicating whether the row was `DELETE`d at the source (Soft-delete). |
+
+This metadata enables sophisticated, time-based data analysis.
+
+---
+
+### 4.5. Q: What is the `gcloud` command to start a Datastream Stream created by `terraform apply`?
+
+**A:**
+
+The `gcloud` command to start a Datastream Stream that was created in a `NOT_STARTED` state by `terraform apply` is as follows.
+
+#### Basic Command
+
+```bash
+gcloud datastream streams update [STREAM_NAME] \
+    --location=[REGION] \
+    --state=RUNNING
+```
+
+*   **`[STREAM_NAME]`**: The name of the Datastream Stream you want to start. (Terraform variable: `var.stream_name`)
+*   **`[REGION]`**: The GCP region where the Stream was created. (Terraform variable: `var.region`)
+*   **`--state=RUNNING`**: The key part that sets the target state of the Stream to 'running'.
+
+#### Example
+
+If your Stream is named `mysql-to-bigquery-stream` and is in the `us-central1` region, you would run:
+
+```bash
+gcloud datastream streams update mysql-to-bigquery-stream \
+    --location=us-central1 \
+    --state=RUNNING
+```
+
+#### Additional Option: `--force`
+
+If you want to forcibly start the stream even if there are validation warnings, you can add the `--force` flag. However, you should only use this if you fully understand the content of the warnings.
