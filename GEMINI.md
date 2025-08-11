@@ -67,3 +67,23 @@ When asked to modify the project, follow these steps:
     -   **Python**: Run `uv run black .` and `uv run ruff check .`.
 5.  **Update Documentation**: If the change impacts how a user runs the project, update `README.md` or `FAQ.md`.
 6.  **Commit Message**: Write a clear commit message, specifying the context, e.g., `feat(terraform): ...` or `fix(scripts): ...`.
+
+## 4. AI Assistant Guide: How to Use Library Documentation
+
+When you need to consult official library documentation to fix a bug or write code, you must follow this workflow. This provides more accurate and structured information than a general web search.
+
+**Priority Workflow:**
+
+1.  **Resolve Library ID (`resolve-library-id`):**
+    To find the precise Context7-compatible ID for a requested library (e.g., `requests`, `Next.js`), **first** use the `resolve-library-id` tool.
+
+2.  **Get Documentation (`get-library-docs`):**
+    Use the ID obtained in the previous step to call the `get-library-docs` tool. If necessary, specify the `topic` parameter to retrieve documentation on a specific subject.
+
+3.  **Modify or Write Code:**
+    Based on the official documentation retrieved, modify or write the code as requested by the user.
+
+**Actions to Avoid:**
+
+*   Do not use the `google_web_search` tool for the purpose of finding library documentation.
+*   Only use `google_web_search` as an alternative in exceptional cases where the `resolve-library-id` or `get-library-docs` tools fail or cannot find the relevant library.
