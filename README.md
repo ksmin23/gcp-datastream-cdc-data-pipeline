@@ -120,7 +120,8 @@ terraform output admin_user_password
 
 In the Cloud SQL Studio query editor, run the following SQL commands:
 ```sql
-GRANT REPLICATION SLAVE, SELECT, REPLICATION CLIENT ON *.* TO 'datastream'@'%';
+GRANT REPLICATION SLAVE, SELECT, REPLICATION CLIENT ON *.* TO \'datastream\'@\'%\
+;
 FLUSH PRIVILEGES;
 ```
 
@@ -198,3 +199,6 @@ To destroy all resources, you must run `terraform destroy` in the reverse order 
 -   [Configure Private Service Connect interfaces](https://cloud.google.com/datastream/docs/psc-interfaces)
 -   [Codelab: Connecting to CloudSQL via Private Service Connect (Terraform)](https://codelabs.developers.google.com/codelabs/cloudsql-psc-terraform#0)
 -   [Codelab: How to create a Private Services Connect for CloudSQL](https://codelabs.developers.google.com/devsite/codelabs/psc-cloud-sql#0)
+-   [Datastream Diagnose issues - MySQL errors](https://cloud.google.com/datastream/docs/diagnose-issues#mysql-errors)
+-   [Datastream Source-specific information for MySQL databases](https://cloud.google.com/datastream/docs/sources-mysql)
+-   [Datastream Known limitations for MySQL databases](https://cloud.google.com/datastream/docs/sources-mysql#mysqlknownlimitations)
