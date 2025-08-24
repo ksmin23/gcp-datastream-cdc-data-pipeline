@@ -120,8 +120,7 @@ terraform output admin_user_password
 
 In the Cloud SQL Studio query editor, run the following SQL commands:
 ```sql
-GRANT REPLICATION SLAVE, SELECT, REPLICATION CLIENT ON *.* TO \'datastream\'@\'%\
-;
+GRANT REPLICATION SLAVE, SELECT, REPLICATION CLIENT ON *.* TO 'datastream'@'%';
 FLUSH PRIVILEGES;
 ```
 
