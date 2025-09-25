@@ -201,5 +201,6 @@ To destroy all resources, you must run `terraform destroy` in the reverse order 
 - [Datastream Diagnose issues - MySQL errors](https://cloud.google.com/datastream/docs/diagnose-issues#mysql-errors)
 - [Datastream Source-specific information for MySQL databases](https://cloud.google.com/datastream/docs/sources-mysql)
 - [Datastream Known limitations for MySQL databases](https://cloud.google.com/datastream/docs/sources-mysql#mysqlknownlimitations)
+- [Configure BigQuery as a destination - Configure write mode](https://cloud.google.com/datastream/docs/configure-bigquery-destination#configure-write-mode): Merge / Append-only
 - [`gcp-datastream-mysql-cdc-to-gcs` GitHub Repository](https://github.com/ksmin23/gcp-datastream-mysql-cdc-to-gcs): A foundational project that uses Terraform to provision the first part of the pipeline: streaming real-time database changes from Cloud SQL for MySQL to Google Cloud Storage using Datastream.
 - [`gcp-datastream-dataflow-analytics` GitHub Repository](https://github.com/ksmin23/gcp-datastream-dataflow-analytics): A reference project demonstrating a complete, end-to-end pipeline that processes the GCS data from this project's architecture using Dataflow and loads it into BigQuery.
